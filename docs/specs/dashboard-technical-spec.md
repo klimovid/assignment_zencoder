@@ -23,6 +23,7 @@
 13. [Accessibility (WCAG 2.1 AA)](#13-accessibility-wcag-21-aa)
 14. [Storybook](#14-storybook)
 15. [Build & Deploy](#15-build--deploy)
+16. [Mock Layer](#16-mock-layer)
 
 ---
 
@@ -62,7 +63,8 @@ npx shadcn-ui@latest init    # style: default, baseColor: slate, css variables: 
 | `@storybook/nextjs` | Component playground |
 | `jest` / `@testing-library/react` | Unit/integration tests |
 | `playwright` | E2E tests |
-| `msw` | API mocking |
+| `msw` | API mocking (tests) |
+| `@faker-js/faker` | Realistic test data generation |
 | `eslint-plugin-boundaries` | FSD layer enforcement |
 
 ### 1.3 TypeScript Configuration
@@ -182,11 +184,27 @@ project-root/
 │   │   ├── operations/page.tsx
 │   │   ├── sessions/[sessionId]/page.tsx
 │   │   └── settings/page.tsx
-│   └── api/auth/
-│       ├── callback/route.ts
-│       ├── logout/route.ts
-│       ├── refresh/route.ts
-│       └── me/route.ts
+│   ├── api/auth/
+│   │   ├── callback/route.ts
+│   │   ├── logout/route.ts
+│   │   ├── refresh/route.ts
+│   │   └── me/route.ts
+│   └── api/mock/                              ← Mock API (Route Handlers)
+│       └── v1/
+│           ├── analytics/
+│           │   ├── overview/route.ts
+│           │   ├── adoption/route.ts
+│           │   ├── delivery/route.ts
+│           │   ├── cost/route.ts
+│           │   ├── quality/route.ts
+│           │   ├── operations/route.ts
+│           │   ├── sessions/[id]/route.ts
+│           │   └── notifications/
+│           │       ├── route.ts               ← GET list
+│           │       └── [id]/route.ts          ← PATCH mark read
+│           └── user/
+│               ├── profile/route.ts           ← GET + PATCH
+│               └── settings/route.ts          ← GET + PATCH
 │
 ├── src/
 │   ├── app/                                ← Layer 6: Application
@@ -303,7 +321,18 @@ project-root/
 │       │   └── UIStore.ts                  ← sidebarCollapsed, isMobile
 │       └── __mocks__/
 │           ├── handlers.ts                 ← MSW handlers from OpenAPI
-│           └── fixtures/                   ← JSON test data
+│           ├── factories/                  ← Faker.js data factories
+│           │   ├── index.ts
+│           │   ├── overview.factory.ts
+│           │   ├── adoption.factory.ts
+│           │   ├── delivery.factory.ts
+│           │   ├── cost.factory.ts
+│           │   ├── quality.factory.ts
+│           │   ├── operations.factory.ts
+│           │   ├── session.factory.ts
+│           │   ├── notification.factory.ts
+│           │   └── user.factory.ts
+│           └── fixtures/                   ← Static JSON snapshots (generated from factories)
 │               ├── overview.json
 │               ├── adoption.json
 │               ├── session.json
@@ -1890,3 +1919,397 @@ CI step before build:
 npx openapi-typescript specs/openapi.yaml -o src/shared/api/types.generated.d.ts
 ```
 Committed to repo for IDE support. CI validates freshness.
+
+---
+
+## 16. Mock Layer
+
+> Mock API реализован как Next.js Route Handlers внутри того же проекта. Деплоится на Vercel вместе с дашбордом — отдельный сервер не нужен. Для тестов используется MSW (см. [§11.2](#112-msw-setup)).
+
+### 16.1 Architecture Decision
+
+| Approach | Pros | Cons | Verdict |
+|----------|------|------|---------|
+| **Next.js Route Handlers** (`app/api/mock/`) | Один деплой, Vercel serverless, тот же репозиторий | Slightly coupled with frontend project | **Chosen** — simplest for single-team demo |
+| MSW only (browser/node intercept) | No server needed, great for tests | No real HTTP, can't share with external consumers | **Used for tests only** |
+| Separate mock server | Independent, multi-consumer | Extra repo, extra deploy, extra infra | **Rejected** — overkill for this phase |
+
+### 16.2 Request Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Vercel (single deploy)                   │
+│                                                                 │
+│  Browser ──→ apiFetch("/v1/analytics/overview")                 │
+│                  │                                              │
+│                  ▼                                              │
+│  ┌──── NEXT_PUBLIC_ANALYTICS_API_URL ────┐                     │
+│  │                                        │                     │
+│  │  Production:  https://api.platform.io  │ ← real Analytics API│
+│  │  Demo/Dev:    /api/mock                │ ← Route Handlers    │
+│  └────────────────────────────────────────┘                     │
+│                  │                                              │
+│                  ▼ (when mock)                                  │
+│  app/api/mock/v1/analytics/overview/route.ts                    │
+│       │                                                         │
+│       └──→ factory.overview() ──→ JSON response                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 16.3 Environment Switching
+
+Переключение между mock и real API — через environment variables. Никаких условий в коде `apiFetch` не нужно.
+
+```bash
+# .env.development (mock — default for local dev)
+NEXT_PUBLIC_ANALYTICS_API_URL=/api/mock
+NEXT_PUBLIC_API_GATEWAY_URL=/api/mock
+
+# .env.production (real backend)
+NEXT_PUBLIC_ANALYTICS_API_URL=https://analytics-api.platform.io
+NEXT_PUBLIC_API_GATEWAY_URL=https://api.platform.io
+
+# Vercel Preview (demo mode with mock)
+# Set in Vercel Dashboard → Environment Variables → Preview
+NEXT_PUBLIC_ANALYTICS_API_URL=/api/mock
+NEXT_PUBLIC_API_GATEWAY_URL=/api/mock
+```
+
+Код `apiFetch` (§3.2) не меняется — он использует `clientEnv.NEXT_PUBLIC_ANALYTICS_API_URL` как base URL. Когда значение `/api/mock`, запросы идут в Route Handlers.
+
+### 16.4 Data Factories
+
+Factories генерируют реалистичные данные с `@faker-js/faker`. Каждая фабрика соответствует одному API-эндпоинту и экспортирует функцию, возвращающую типизированный ответ.
+
+```typescript
+// src/shared/__mocks__/factories/overview.factory.ts
+import { faker } from '@faker-js/faker';
+import type { OverviewResponse } from '@shared/api/types.generated';
+
+export function createOverviewResponse(
+  overrides?: Partial<OverviewResponse>,
+): OverviewResponse {
+  const activeUsers = faker.number.int({ min: 80, max: 500 });
+  const prevActiveUsers = faker.number.int({ min: 60, max: 480 });
+
+  return {
+    data: {
+      active_users: {
+        current: activeUsers,
+        previous: prevActiveUsers,
+        delta_percent: Number(
+          (((activeUsers - prevActiveUsers) / prevActiveUsers) * 100).toFixed(1),
+        ),
+      },
+      sessions_total: {
+        current: faker.number.int({ min: 500, max: 5000 }),
+        previous: faker.number.int({ min: 400, max: 4800 }),
+        delta_percent: faker.number.float({ min: -15, max: 30, fractionDigits: 1 }),
+      },
+      accepted_outcome_rate: {
+        current: faker.number.float({ min: 60, max: 95, fractionDigits: 1 }),
+        previous: faker.number.float({ min: 55, max: 90, fractionDigits: 1 }),
+        delta_percent: faker.number.float({ min: -5, max: 10, fractionDigits: 1 }),
+      },
+      cost_per_task: {
+        current: faker.number.float({ min: 0.5, max: 5.0, fractionDigits: 2 }),
+        previous: faker.number.float({ min: 0.6, max: 5.5, fractionDigits: 2 }),
+        delta_percent: faker.number.float({ min: -20, max: 5, fractionDigits: 1 }),
+      },
+      ci_pass_rate: {
+        current: faker.number.float({ min: 75, max: 99, fractionDigits: 1 }),
+        previous: faker.number.float({ min: 70, max: 98, fractionDigits: 1 }),
+        delta_percent: faker.number.float({ min: -3, max: 8, fractionDigits: 1 }),
+      },
+    },
+    meta: {
+      time_range: '30d',
+      org_id: faker.string.uuid(),
+      generated_at: new Date().toISOString(),
+    },
+    ...overrides,
+  };
+}
+```
+
+```typescript
+// src/shared/__mocks__/factories/session.factory.ts
+import { faker } from '@faker-js/faker';
+
+export function createSessionDetail(sessionId?: string) {
+  const stepsCount = faker.number.int({ min: 3, max: 12 });
+
+  return {
+    data: {
+      id: sessionId ?? faker.string.uuid(),
+      status: faker.helpers.arrayElement(['completed', 'failed', 'running']),
+      task_type: faker.helpers.arrayElement(['bugfix', 'feature', 'refactor', 'test', 'ops']),
+      repo: `${faker.internet.username()}/${faker.word.noun()}-${faker.word.adjective()}`,
+      branch: `agent/${faker.git.branch()}`,
+      started_at: faker.date.recent({ days: 7 }).toISOString(),
+      completed_at: faker.date.recent({ days: 1 }).toISOString(),
+      model: faker.helpers.arrayElement(['claude-sonnet-4-20250514', 'gpt-4o', 'claude-opus-4-20250514']),
+      total_cost_usd: faker.number.float({ min: 0.05, max: 8.0, fractionDigits: 4 }),
+      tokens: {
+        input: faker.number.int({ min: 10000, max: 500000 }),
+        output: faker.number.int({ min: 2000, max: 100000 }),
+      },
+      steps: Array.from({ length: stepsCount }, (_, i) => ({
+        index: i,
+        type: faker.helpers.arrayElement(['reasoning', 'tool_call', 'code_edit', 'terminal', 'review']),
+        summary: faker.lorem.sentence(),
+        duration_ms: faker.number.int({ min: 200, max: 30000 }),
+        timestamp: faker.date.recent({ days: 1 }).toISOString(),
+      })),
+      pr: {
+        number: faker.number.int({ min: 1, max: 9999 }),
+        url: `https://github.com/org/repo/pull/${faker.number.int({ min: 1, max: 9999 })}`,
+        status: faker.helpers.arrayElement(['open', 'merged', 'closed']),
+        ci_status: faker.helpers.arrayElement(['passed', 'failed', 'pending']),
+      },
+    },
+  };
+}
+```
+
+```typescript
+// src/shared/__mocks__/factories/index.ts
+export { createOverviewResponse } from './overview.factory';
+export { createAdoptionResponse } from './adoption.factory';
+export { createDeliveryResponse } from './delivery.factory';
+export { createCostResponse } from './cost.factory';
+export { createQualityResponse } from './quality.factory';
+export { createOperationsResponse } from './operations.factory';
+export { createSessionDetail } from './session.factory';
+export { createNotificationList, createNotification } from './notification.factory';
+export { createUserProfile, createUserSettings } from './user.factory';
+```
+
+### 16.5 Route Handlers
+
+Каждый Route Handler: парсит query params, вызывает соответствующую фабрику, возвращает JSON с корректными заголовками.
+
+```typescript
+// app/api/mock/v1/analytics/overview/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { createOverviewResponse } from '@shared/__mocks__/factories';
+
+export async function GET(request: NextRequest) {
+  const { searchParams } = request.nextUrl;
+  const timeRange = searchParams.get('time_range') ?? '30d';
+
+  // Simulate network latency (configurable for UX testing)
+  const delay = parseInt(searchParams.get('_delay') ?? '0', 10);
+  if (delay > 0) {
+    await new Promise((resolve) => setTimeout(resolve, Math.min(delay, 5000)));
+  }
+
+  return NextResponse.json(createOverviewResponse({ meta: { time_range: timeRange } }), {
+    headers: {
+      'X-Mock': 'true',
+      'Cache-Control': 'no-store',
+    },
+  });
+}
+```
+
+```typescript
+// app/api/mock/v1/analytics/sessions/[id]/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { createSessionDetail } from '@shared/__mocks__/factories';
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } },
+) {
+  return NextResponse.json(createSessionDetail(params.id), {
+    headers: { 'X-Mock': 'true', 'Cache-Control': 'no-store' },
+  });
+}
+```
+
+```typescript
+// app/api/mock/v1/analytics/notifications/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { createNotificationList } from '@shared/__mocks__/factories';
+
+export async function GET() {
+  return NextResponse.json(createNotificationList(), {
+    headers: { 'X-Mock': 'true', 'Cache-Control': 'no-store' },
+  });
+}
+```
+
+```typescript
+// app/api/mock/v1/analytics/notifications/[id]/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } },
+) {
+  const body = await request.json();
+
+  return NextResponse.json(
+    { data: { id: params.id, ...body, updated_at: new Date().toISOString() } },
+    { headers: { 'X-Mock': 'true' } },
+  );
+}
+```
+
+```typescript
+// app/api/mock/v1/user/profile/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { createUserProfile } from '@shared/__mocks__/factories';
+
+// In-memory state for PATCH persistence within session
+let profileState = createUserProfile();
+
+export async function GET() {
+  return NextResponse.json({ data: profileState }, {
+    headers: { 'X-Mock': 'true', 'Cache-Control': 'no-store' },
+  });
+}
+
+export async function PATCH(request: NextRequest) {
+  const body = await request.json();
+  profileState = { ...profileState, ...body };
+  return NextResponse.json({ data: profileState }, {
+    headers: { 'X-Mock': 'true' },
+  });
+}
+```
+
+### 16.6 Endpoint Coverage Map
+
+| Endpoint | Method | Route Handler | Factory | MSW Handler |
+|----------|--------|--------------|---------|-------------|
+| `/v1/analytics/overview` | GET | `app/api/mock/v1/analytics/overview/route.ts` | `createOverviewResponse` | `handlers.ts` |
+| `/v1/analytics/adoption` | GET | `app/api/mock/v1/analytics/adoption/route.ts` | `createAdoptionResponse` | `handlers.ts` |
+| `/v1/analytics/delivery` | GET | `app/api/mock/v1/analytics/delivery/route.ts` | `createDeliveryResponse` | `handlers.ts` |
+| `/v1/analytics/cost` | GET | `app/api/mock/v1/analytics/cost/route.ts` | `createCostResponse` | `handlers.ts` |
+| `/v1/analytics/quality` | GET | `app/api/mock/v1/analytics/quality/route.ts` | `createQualityResponse` | `handlers.ts` |
+| `/v1/analytics/operations` | GET | `app/api/mock/v1/analytics/operations/route.ts` | `createOperationsResponse` | `handlers.ts` |
+| `/v1/analytics/sessions/:id` | GET | `app/api/mock/v1/analytics/sessions/[id]/route.ts` | `createSessionDetail` | `handlers.ts` |
+| `/v1/analytics/notifications` | GET | `app/api/mock/v1/analytics/notifications/route.ts` | `createNotificationList` | `handlers.ts` |
+| `/v1/analytics/notifications/:id` | PATCH | `app/api/mock/v1/analytics/notifications/[id]/route.ts` | — (inline) | `handlers.ts` |
+| `/v1/user/profile` | GET | `app/api/mock/v1/user/profile/route.ts` | `createUserProfile` | `handlers.ts` |
+| `/v1/user/profile` | PATCH | `app/api/mock/v1/user/profile/route.ts` | — (stateful) | `handlers.ts` |
+| `/v1/user/settings` | GET | `app/api/mock/v1/user/settings/route.ts` | `createUserSettings` | `handlers.ts` |
+| `/v1/user/settings` | PATCH | `app/api/mock/v1/user/settings/route.ts` | — (stateful) | `handlers.ts` |
+
+### 16.7 Seeded Randomization
+
+Для стабильных screenshots и visual regression тестов, фабрики поддерживают seed:
+
+```typescript
+// Deterministic data for Storybook / Playwright visual tests
+import { faker } from '@faker-js/faker';
+
+faker.seed(42); // Same data every time
+const overview = createOverviewResponse();
+```
+
+Для dev-режима seed не фиксируется — данные меняются при каждом запросе, что помогает находить баги с edge cases.
+
+### 16.8 Query Parameter Support
+
+Route Handlers поддерживают те же query params, что и реальный API (§3 PRD):
+
+| Parameter | Mock Behavior |
+|-----------|--------------|
+| `time_range` | Передаётся в `meta.time_range`. Данные генерируются без реальной привязки к периоду |
+| `team_id[]` | Парсится, фильтрация имитируется (уменьшается количество записей) |
+| `granularity` | Влияет на количество точек в time series (`hourly` → 24, `daily` → 30, `weekly` → 12) |
+| `cursor` / `limit` | Cursor-based пагинация: генерируется `next_cursor` если `limit < total` |
+| `format=csv` | Возвращает CSV с заголовком `Content-Type: text/csv` |
+| `_delay` | **Mock-only**: искусственная задержка в ms для тестирования loading states |
+| `_error` | **Mock-only**: возвращает указанный HTTP status code для тестирования error states |
+
+```typescript
+// Пример: error simulation
+// GET /api/mock/v1/analytics/overview?_error=500
+const errorCode = searchParams.get('_error');
+if (errorCode) {
+  return NextResponse.json(
+    { error: { code: 'SIMULATED_ERROR', message: `Mock error ${errorCode}` } },
+    { status: parseInt(errorCode, 10) },
+  );
+}
+```
+
+### 16.9 MSW ↔ Factory Integration
+
+MSW handlers (§11.2) переиспользуют те же фабрики, обеспечивая единый источник данных для dev и тестов:
+
+```typescript
+// src/shared/__mocks__/handlers.ts
+import { http, HttpResponse } from 'msw';
+import {
+  createOverviewResponse,
+  createAdoptionResponse,
+  createDeliveryResponse,
+  createCostResponse,
+  createQualityResponse,
+  createOperationsResponse,
+  createSessionDetail,
+  createNotificationList,
+  createUserProfile,
+  createUserSettings,
+} from './factories';
+
+export const handlers = [
+  http.get('*/v1/analytics/overview', () =>
+    HttpResponse.json(createOverviewResponse()),
+  ),
+  http.get('*/v1/analytics/adoption', () =>
+    HttpResponse.json(createAdoptionResponse()),
+  ),
+  http.get('*/v1/analytics/delivery', () =>
+    HttpResponse.json(createDeliveryResponse()),
+  ),
+  http.get('*/v1/analytics/cost', () =>
+    HttpResponse.json(createCostResponse()),
+  ),
+  http.get('*/v1/analytics/quality', () =>
+    HttpResponse.json(createQualityResponse()),
+  ),
+  http.get('*/v1/analytics/operations', () =>
+    HttpResponse.json(createOperationsResponse()),
+  ),
+  http.get('*/v1/analytics/sessions/:id', ({ params }) =>
+    HttpResponse.json(createSessionDetail(params.id as string)),
+  ),
+  http.get('*/v1/analytics/notifications', () =>
+    HttpResponse.json(createNotificationList()),
+  ),
+  http.patch('*/v1/analytics/notifications/:id', async ({ params, request }) => {
+    const body = await request.json();
+    return HttpResponse.json({ data: { id: params.id, ...body } });
+  }),
+  http.get('*/v1/user/profile', () =>
+    HttpResponse.json({ data: createUserProfile() }),
+  ),
+  http.get('*/v1/user/settings', () =>
+    HttpResponse.json({ data: createUserSettings() }),
+  ),
+];
+```
+
+### 16.10 Deployment
+
+Mock API деплоится на Vercel автоматически как часть Next.js проекта:
+
+- **Vercel Serverless Functions**: каждый Route Handler → отдельная serverless function
+- **Cold start**: ~100-200ms (acceptable для mock)
+- **Не нужен**: отдельный репозиторий, отдельный хостинг, отдельная CI/CD
+- **Preview deployments**: mock API доступен на каждом PR preview
+
+```
+Production (Vercel):
+  ├── Dashboard UI        → Edge/Serverless
+  ├── app/api/auth/*      → Serverless Functions
+  └── app/api/mock/v1/*   → Serverless Functions (mock API)
+```
+
+> **Note**: В production с реальным бэкендом, mock routes остаются задеплоенными, но не используются — `NEXT_PUBLIC_ANALYTICS_API_URL` указывает на реальный API. Для полного исключения mock кода из production build можно использовать `next.config.js` rewrites с условием по env variable.
