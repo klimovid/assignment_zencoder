@@ -168,8 +168,9 @@ The platform uses a **Bridge tenancy model** (validated pattern, R=0.9):
 | | |
 |-|-|
 | **Technology** | WorkOS / Auth0 + OPA / Cedar (policy engine) |
-| **Responsibility** | SSO (SAML 2.0, OIDC), SCIM 2.0 user lifecycle sync, session management, RBAC/ABAC policy evaluation |
-| **Protocols** | ← API Gateway: gRPC · → Identity Providers: SAML/OIDC/SCIM · → Event Bus: Kafka (auth events, role changes) |
+| **Responsibility** | SSO (SAML 2.0, OIDC), SCIM 2.0 user lifecycle sync, session management, RBAC/ABAC policy evaluation, user profile storage (identity data synced from IdP + platform-specific fields like avatar, preferences) |
+| **Login UI** | Hosted by IdP (WorkOS AuthKit / Okta / Azure AD hosted login page). Neither Web App UI nor Dashboard UI contain login pages — both redirect to IdP for authentication. Callback routes in each UI handle token exchange and cookie setup. |
+| **Protocols** | ← API Gateway: gRPC · ← Web App UI / Dashboard UI: HTTPS (auth redirect + callback) · → Identity Providers: SAML/OIDC/SCIM · → Event Bus: Kafka (auth events, role changes) |
 
 ### 4. Tenant & Org Management
 
