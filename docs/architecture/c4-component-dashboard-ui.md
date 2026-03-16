@@ -134,7 +134,7 @@ C4Component
 
     Container_Boundary(dashboardUI, "Dashboard UI (React / Next.js App Router + FSD)") {
 
-        Component_Boundary(sharedLayer, "shared/ — Shared Infrastructure") {
+        Boundary(sharedLayer, "shared/ — Shared Infrastructure") {
             Component(designSystem, "Design System", "@platform/ui (React)", "Button, Card, Table, Skeleton, Input, Select, DatePicker, Badge, Tooltip, Modal, Dialog, Icon")
             Component(apiClient, "API Client", "openapi-typescript + Zod", "Auto-generated types, fetch wrapper, JWT injection, runtime response validation")
             Component(queryKeyFactory, "Query Key Factory", "TypeScript", "Centralized key generation: queryKeys.{view}(filters)")
@@ -144,7 +144,7 @@ C4Component
             Component(sharedLib, "Lib", "TypeScript", "PostHog helpers, Sentry helpers, i18n (next-intl), date/number formatters")
         }
 
-        Component_Boundary(entitiesLayer, "entities/ — Business Entities") {
+        Boundary(entitiesLayer, "entities/ — Business Entities") {
             Component(sessionEntity, "session", "Entity", "model/ types, api/ useSession hook")
             Component(metricEntity, "metric", "Entity", "ui/ KPICard, DeltaIndicator, ChartContainer; model/ metric types")
             Component(notificationEntity, "notification", "Entity", "ui/ NotificationItem; model/ NotificationStore; api/ useNotifications (60s poll)")
@@ -152,14 +152,14 @@ C4Component
             Component(userEntity, "user", "Entity", "model/ UserSettingsStore; api/ useProfile, useSettings, useUpdateProfile, useUpdateSettings")
         }
 
-        Component_Boundary(featuresLayer, "features/ — User-Facing Capabilities") {
+        Boundary(featuresLayer, "features/ — User-Facing Capabilities") {
             Component(filterMgmt, "filter-management", "Feature", "ui/ FilterBar, DateRangePicker, PeriodComparisonToggle; model/ FilterStore; lib/ URLSyncProvider")
             Component(exportData, "export-data", "Feature", "ui/ ExportButton — CSV/NDJSON export with current filters")
             Component(themeSwitching, "theme-switching", "Feature", "ui/ ThemeToggle — light/dark theme switch")
             Component(authFeature, "auth", "Feature", "ui/ AuthGuard (client-side RBAC); model/ AuthStore (user, role, org_id, permissions)")
         }
 
-        Component_Boundary(widgetsLayer, "widgets/ — Composite UI Blocks") {
+        Boundary(widgetsLayer, "widgets/ — Composite UI Blocks") {
             Component(appShell, "app-shell", "Widget", "Root layout: sidebar + header + content area")
             Component(sidebarNav, "sidebar-nav", "Widget", "6 views + Settings; active route; collapsible on mobile")
             Component(breadcrumbs, "breadcrumbs", "Widget", "Auto from route: Dashboard > View > Team > Session")
@@ -171,7 +171,7 @@ C4Component
             Component(costBreakdown, "cost-breakdown", "Widget", "Per-step cost bar chart + total session KPI")
         }
 
-        Component_Boundary(pagesLayer, "pages/ — Page Compositions") {
+        Boundary(pagesLayer, "pages/ — Page Compositions") {
             Component(execPage, "executive-overview", "Page", "api/ useOverview; KPIs, trends, risk posture")
             Component(adoptPage, "adoption", "Page", "api/ useAdoption; DAU/WAU/MAU, funnel, team drill-down")
             Component(delivPage, "delivery", "Page", "api/ useDelivery; PRs, TTM, agent vs non-agent, team drill-down")
@@ -182,7 +182,7 @@ C4Component
             Component(settingsPage, "settings", "Page", "Uses entities/user; theme, timezone, digests")
         }
 
-        Component_Boundary(appLayer, "app/ — Application Layer") {
+        Boundary(appLayer, "app/ — Application Layer") {
             Component(providers, "Providers", "React Context", "PostHog > Sentry > I18n > Theme > QueryClient > MobX stores > URLSync > AuthGuard")
             Component(middleware, "Auth Middleware", "Next.js Middleware", "Edge: JWT validation, role-based route protection, IdP redirect")
             Component(authRoutes, "Auth Route Handlers", "Next.js Route Handlers", "/api/auth/callback, /logout, /refresh, /me")
