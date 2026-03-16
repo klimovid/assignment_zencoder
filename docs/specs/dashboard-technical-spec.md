@@ -1,0 +1,1892 @@
+# Technical Implementation Spec: Dashboard UI
+
+> **Version**: 1.0 | **Date**: 2026-03-16
+> **Prerequisites**: [PRD](../prd/dashboard-prd.md), [C4 Component](../architecture/c4-component-dashboard-ui.md), [C4 Container](../architecture/c4-container.md)
+> **Principle**: third-party services (Sentry, PostHog, etc.) — **stub implementations only** behind own abstractions. Real SDKs are a separate phase.
+
+---
+
+## Table of Contents
+
+1. [Project Bootstrap](#1-project-bootstrap)
+2. [Directory Structure / FSD](#2-directory-structure--fsd)
+3. [API Integration](#3-api-integration)
+4. [State Management](#4-state-management)
+5. [Auth Implementation](#5-auth-implementation)
+6. [Routing & Navigation](#6-routing--navigation)
+7. [Component Specs (per FSD Layer)](#7-component-specs-per-fsd-layer)
+8. [Session Deep-Dive](#8-session-deep-dive)
+9. [Responsive & Mobile](#9-responsive--mobile)
+10. [Performance](#10-performance)
+11. [Testing Strategy](#11-testing-strategy)
+12. [Observability — Abstractions & Stubs](#12-observability--abstractions--stubs)
+13. [Accessibility (WCAG 2.1 AA)](#13-accessibility-wcag-21-aa)
+14. [Storybook](#14-storybook)
+15. [Build & Deploy](#15-build--deploy)
+
+---
+
+## 1. Project Bootstrap
+
+### 1.1 Initialization
+
+```bash
+npx create-next-app@14 dashboard-ui --typescript --tailwind --eslint --app --src-dir
+cd dashboard-ui
+npx shadcn-ui@latest init    # style: default, baseColor: slate, css variables: yes
+```
+
+### 1.2 Key Dependencies
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `next` | ^14.2 | App Router, SSR, middleware |
+| `react` / `react-dom` | ^18.3 | UI framework |
+| `tailwindcss` | ^3.4 | Utility-first styling |
+| `@shadcn/ui` | latest | Design system primitives |
+| `mobx` / `mobx-react-lite` | ^6 / ^4 | Observable UI state |
+| `@tanstack/react-query` | ^5 | Server state, caching |
+| `recharts` | ^2.12 | Charts |
+| `zod` | ^3.23 | Runtime validation |
+| `openapi-typescript` | ^7 | OpenAPI → TypeScript codegen |
+| `next-intl` | ^3 | i18n |
+| `jose` | ^5 | JWT validation (edge) |
+| `lucide-react` | latest | Icons |
+| `react-diff-view` | ^3 | Diff viewer |
+| `shiki` | ^1 | Syntax highlighting |
+
+**Dev dependencies**:
+
+| Package | Purpose |
+|---------|---------|
+| `@storybook/nextjs` | Component playground |
+| `jest` / `@testing-library/react` | Unit/integration tests |
+| `playwright` | E2E tests |
+| `msw` | API mocking |
+| `eslint-plugin-boundaries` | FSD layer enforcement |
+
+### 1.3 TypeScript Configuration
+
+```jsonc
+// tsconfig.json (key fields)
+{
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "paths": {
+      "@shared/*": ["./src/shared/*"],
+      "@entities/*": ["./src/entities/*"],
+      "@features/*": ["./src/features/*"],
+      "@widgets/*": ["./src/widgets/*"],
+      "@pages/*": ["./src/pages/*"],
+      "@app/*": ["./src/app/*"]
+    }
+  }
+}
+```
+
+### 1.4 ESLint — FSD Boundary Enforcement
+
+```jsonc
+// eslint-plugin-boundaries config
+{
+  "rules": {
+    "boundaries/element-types": ["error", {
+      "default": "disallow",
+      "rules": [
+        { "from": "shared",   "allow": [] },
+        { "from": "entities", "allow": ["shared"] },
+        { "from": "features", "allow": ["shared", "entities"] },
+        { "from": "widgets",  "allow": ["shared", "entities", "features"] },
+        { "from": "pages",    "allow": ["shared", "entities", "features", "widgets"] },
+        { "from": "app",      "allow": ["shared", "entities", "features", "widgets", "pages"] }
+      ]
+    }]
+  }
+}
+```
+
+### 1.5 Environment Variables
+
+```typescript
+// src/shared/config/env.ts
+import { z } from 'zod';
+
+const serverEnvSchema = z.object({
+  JWT_SECRET: z.string().min(32),
+  IDP_CLIENT_ID: z.string(),
+  IDP_CLIENT_SECRET: z.string(),
+  IDP_ISSUER_URL: z.string().url(),
+});
+
+const clientEnvSchema = z.object({
+  NEXT_PUBLIC_ANALYTICS_API_URL: z.string().url(),
+  NEXT_PUBLIC_API_GATEWAY_URL: z.string().url(),
+  NEXT_PUBLIC_APP_URL: z.string().url(),
+});
+
+export const serverEnv = serverEnvSchema.parse(process.env);
+export const clientEnv = clientEnvSchema.parse({
+  NEXT_PUBLIC_ANALYTICS_API_URL: process.env.NEXT_PUBLIC_ANALYTICS_API_URL,
+  NEXT_PUBLIC_API_GATEWAY_URL: process.env.NEXT_PUBLIC_API_GATEWAY_URL,
+  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+});
+```
+
+| Variable | Required | Default | Used By |
+|----------|----------|---------|---------|
+| `JWT_SECRET` | Yes | — | Auth middleware |
+| `IDP_CLIENT_ID` | Yes | — | Auth route handlers |
+| `IDP_CLIENT_SECRET` | Yes | — | Auth route handlers |
+| `IDP_ISSUER_URL` | Yes | — | Auth middleware, route handlers |
+| `NEXT_PUBLIC_ANALYTICS_API_URL` | Yes | — | API client (analytics) |
+| `NEXT_PUBLIC_API_GATEWAY_URL` | Yes | — | API client (user profile) |
+| `NEXT_PUBLIC_APP_URL` | Yes | — | Auth callbacks |
+
+### 1.6 Tailwind Configuration
+
+```typescript
+// tailwind.config.ts (key parts)
+export default {
+  darkMode: 'class',
+  content: ['./app/**/*.{ts,tsx}', './src/**/*.{ts,tsx}'],
+  presets: [require('./src/shared/ui/theme/tailwind-preset')],
+};
+```
+
+---
+
+## 2. Directory Structure / FSD
+
+### 2.1 Full File Tree
+
+```
+project-root/
+├── app/                                    ← Next.js App Router (routing only)
+│   ├── middleware.ts
+│   ├── dashboard/
+│   │   ├── layout.tsx                      ← Server Component → Providers
+│   │   ├── loading.tsx                     ← DashboardSkeleton
+│   │   ├── error.tsx                       ← ErrorBoundary → IErrorTracker
+│   │   ├── page.tsx                        ← → pages/executive-overview
+│   │   ├── adoption/
+│   │   │   ├── page.tsx
+│   │   │   └── [teamId]/page.tsx
+│   │   ├── delivery/
+│   │   │   ├── page.tsx
+│   │   │   └── [teamId]/page.tsx
+│   │   ├── cost/
+│   │   │   ├── page.tsx
+│   │   │   └── [teamId]/page.tsx
+│   │   ├── quality/page.tsx
+│   │   ├── operations/page.tsx
+│   │   ├── sessions/[sessionId]/page.tsx
+│   │   └── settings/page.tsx
+│   └── api/auth/
+│       ├── callback/route.ts
+│       ├── logout/route.ts
+│       ├── refresh/route.ts
+│       └── me/route.ts
+│
+├── src/
+│   ├── app/                                ← Layer 6: Application
+│   │   ├── providers.tsx                   ← Provider composition
+│   │   └── middleware.ts                   ← Auth logic (imported by app/middleware.ts)
+│   │
+│   ├── pages/                              ← Layer 5: Page compositions
+│   │   ├── executive-overview/
+│   │   │   ├── ui/ExecutiveOverviewPage.tsx
+│   │   │   ├── api/useOverview.ts
+│   │   │   └── index.ts
+│   │   ├── adoption/
+│   │   ├── delivery/
+│   │   ├── cost/
+│   │   ├── quality/
+│   │   ├── operations/                     ← useOperations has refetchInterval: 60_000
+│   │   ├── session-deep-dive/
+│   │   ├── settings/
+│   │   └── index.ts
+│   │
+│   ├── widgets/                            ← Layer 4: Composite UI blocks
+│   │   ├── app-shell/
+│   │   ├── sidebar-nav/
+│   │   ├── breadcrumbs/
+│   │   ├── notification-center/
+│   │   ├── user-menu/
+│   │   ├── empty-state/
+│   │   ├── data-table/
+│   │   ├── session-timeline/
+│   │   └── cost-breakdown/
+│   │
+│   ├── features/                           ← Layer 3: User-facing capabilities
+│   │   ├── filter-management/
+│   │   │   ├── ui/
+│   │   │   │   ├── FilterBar.tsx
+│   │   │   │   ├── DateRangePicker.tsx
+│   │   │   │   └── PeriodComparisonToggle.tsx
+│   │   │   ├── model/FilterStore.ts
+│   │   │   ├── lib/URLSyncProvider.tsx
+│   │   │   └── index.ts                    ← public API
+│   │   ├── export-data/
+│   │   ├── theme-switching/
+│   │   │   ├── ui/
+│   │   │   │   ├── ThemeToggle.tsx
+│   │   │   │   └── ThemeProvider.tsx
+│   │   │   └── index.ts
+│   │   └── auth/
+│   │       ├── ui/AuthGuard.tsx
+│   │       ├── model/AuthStore.ts
+│   │       └── index.ts
+│   │
+│   ├── entities/                           ← Layer 2: Business entities
+│   │   ├── session/
+│   │   │   ├── model/types.ts
+│   │   │   ├── api/useSession.ts
+│   │   │   └── index.ts
+│   │   ├── metric/
+│   │   │   ├── ui/
+│   │   │   │   ├── KPICard.tsx
+│   │   │   │   ├── DeltaIndicator.tsx
+│   │   │   │   └── ChartContainer.tsx
+│   │   │   ├── model/types.ts
+│   │   │   └── index.ts
+│   │   ├── notification/
+│   │   │   ├── ui/NotificationItem.tsx
+│   │   │   ├── model/NotificationStore.ts
+│   │   │   ├── api/useNotifications.ts
+│   │   │   └── index.ts
+│   │   ├── team/
+│   │   │   ├── model/types.ts
+│   │   │   └── index.ts
+│   │   └── user/
+│   │       ├── model/UserSettingsStore.ts
+│   │       ├── api/useProfile.ts
+│   │       ├── api/useSettings.ts
+│   │       └── index.ts
+│   │
+│   └── shared/                             ← Layer 1: Shared infrastructure
+│       ├── ui/
+│       │   ├── button.tsx                  ← Shadcn components
+│       │   ├── card.tsx
+│       │   ├── table.tsx
+│       │   ├── skeleton.tsx
+│       │   ├── input.tsx
+│       │   ├── select.tsx
+│       │   ├── date-picker.tsx
+│       │   ├── badge.tsx
+│       │   ├── tooltip.tsx
+│       │   ├── modal.tsx
+│       │   ├── dialog.tsx
+│       │   └── theme/
+│       │       ├── tokens.css              ← CSS custom properties (light/dark)
+│       │       └── tailwind-preset.ts      ← Design tokens as Tailwind preset
+│       ├── api/
+│       │   ├── client.ts                   ← apiFetch wrapper
+│       │   ├── query-keys.ts               ← QueryKeyFactory
+│       │   ├── query-client.ts             ← TanStack Query config
+│       │   └── types.generated.d.ts        ← openapi-typescript output
+│       ├── config/
+│       │   ├── routes.ts                   ← Route constants
+│       │   ├── permissions.ts              ← RBAC map
+│       │   └── env.ts                      ← Zod-validated env
+│       ├── lib/
+│       │   ├── formatters.ts               ← Date, number, currency formatters
+│       │   ├── i18n.ts                     ← next-intl setup
+│       │   ├── hooks/
+│       │   │   └── useMediaQuery.ts
+│       │   └── analytics/                  ← Observability abstractions + stubs
+│       │       ├── interfaces.ts           ← IErrorTracker, IAnalytics, ILogger
+│       │       ├── stubs.ts                ← Console/noop implementations
+│       │       ├── provider.tsx            ← React context for DI
+│       │       └── events.ts               ← AnalyticsEvent taxonomy
+│       ├── model/
+│       │   └── UIStore.ts                  ← sidebarCollapsed, isMobile
+│       └── __mocks__/
+│           ├── handlers.ts                 ← MSW handlers from OpenAPI
+│           └── fixtures/                   ← JSON test data
+│               ├── overview.json
+│               ├── adoption.json
+│               ├── session.json
+│               └── ...
+```
+
+### 2.2 Naming Conventions
+
+| Element | Convention | Example |
+|---------|-----------|---------|
+| Slice directory | kebab-case | `filter-management/` |
+| Component file | PascalCase | `FilterBar.tsx` |
+| Hook file | camelCase | `useOverview.ts` |
+| Store file | PascalCase | `FilterStore.ts` |
+| Type file | camelCase | `types.ts` |
+| Barrel export | `index.ts` | Public API of each slice |
+
+### 2.3 Barrel Export Rules
+
+Each slice exposes only its public API via `index.ts`. Deep imports across slices are **forbidden** (enforced by `eslint-plugin-boundaries`).
+
+```typescript
+// src/features/filter-management/index.ts
+export { FilterBar } from './ui/FilterBar';
+export { DateRangePicker } from './ui/DateRangePicker';
+export { PeriodComparisonToggle } from './ui/PeriodComparisonToggle';
+export { FilterStore } from './model/FilterStore';
+export { URLSyncProvider } from './lib/URLSyncProvider';
+```
+
+### 2.4 Segments
+
+| Segment | Purpose | Example Contents |
+|---------|---------|-----------------|
+| `ui/` | React components | `FilterBar.tsx`, `KPICard.tsx` |
+| `model/` | Types, MobX stores | `FilterStore.ts`, `types.ts` |
+| `api/` | TanStack Query hooks | `useOverview.ts`, `useSession.ts` |
+| `lib/` | Non-UI logic, providers | `URLSyncProvider.tsx`, `formatters.ts` |
+| `config/` | Constants, maps | `routes.ts`, `permissions.ts` |
+
+---
+
+## 3. API Integration
+
+### 3.1 OpenAPI Codegen Pipeline
+
+```
+openapi.yaml (source of truth, published by Analytics API)
+       │
+       ▼
+openapi-typescript (CI step)
+       │
+       ├── types.generated.d.ts   ← compile-time types
+       │
+       ▼
+Manual Zod schemas              ← runtime validation (CI validates against OpenAPI)
+       │
+       ├── Used by apiFetch()   ← parse every response
+       └── Used by MSW          ← generate test handlers
+```
+
+CI step: `npx openapi-typescript openapi.yaml -o src/shared/api/types.generated.d.ts`
+
+### 3.2 API Client (`apiFetch`)
+
+```typescript
+// src/shared/api/client.ts
+import { z } from 'zod';
+import { clientEnv } from '@shared/config/env';
+
+interface FetchOptions extends RequestInit {
+  baseUrl?: 'analytics' | 'gateway';
+}
+
+export async function apiFetch<T>(
+  path: string,
+  schema: z.ZodType<T>,
+  options: FetchOptions = {},
+): Promise<T> {
+  const { baseUrl = 'analytics', ...fetchOptions } = options;
+  const base = baseUrl === 'analytics'
+    ? clientEnv.NEXT_PUBLIC_ANALYTICS_API_URL
+    : clientEnv.NEXT_PUBLIC_API_GATEWAY_URL;
+
+  const response = await fetch(`${base}${path}`, {
+    ...fetchOptions,
+    credentials: 'include', // httpOnly cookie
+    headers: {
+      'Content-Type': 'application/json',
+      ...fetchOptions.headers,
+    },
+  });
+
+  if (response.status === 401) {
+    window.location.href = '/api/auth/refresh?redirect=' + encodeURIComponent(window.location.pathname);
+    throw new ApiError('UNAUTHORIZED', 'Session expired', 401);
+  }
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new ApiError(
+      body.error?.code ?? 'UNKNOWN',
+      body.error?.message ?? response.statusText,
+      response.status,
+    );
+  }
+
+  const data = await response.json();
+  return schema.parse(data); // Zod runtime validation
+}
+
+export class ApiError extends Error {
+  constructor(
+    public readonly code: string,
+    message: string,
+    public readonly status: number,
+    public readonly details?: unknown,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+```
+
+### 3.3 Query Key Factory
+
+```typescript
+// src/shared/api/query-keys.ts
+import type { FilterState } from '@features/filter-management';
+
+function serializeFilters(filters: FilterState) {
+  return JSON.stringify(filters, Object.keys(filters).sort());
+}
+
+export const queryKeys = {
+  analytics: {
+    overview: (f: FilterState) => ['analytics', 'overview', serializeFilters(f)] as const,
+    adoption: (f: FilterState) => ['analytics', 'adoption', serializeFilters(f)] as const,
+    delivery: (f: FilterState) => ['analytics', 'delivery', serializeFilters(f)] as const,
+    cost:     (f: FilterState) => ['analytics', 'cost', serializeFilters(f)] as const,
+    quality:  (f: FilterState) => ['analytics', 'quality', serializeFilters(f)] as const,
+    operations: (f: FilterState) => ['analytics', 'operations', serializeFilters(f)] as const,
+    session:  (id: string) => ['analytics', 'session', id] as const,
+  },
+  notifications: {
+    list: () => ['notifications'] as const,
+  },
+  user: {
+    profile:  () => ['user', 'profile'] as const,
+    settings: () => ['user', 'settings'] as const,
+  },
+} as const;
+```
+
+### 3.4 Data Freshness & Cache Configuration
+
+| Endpoint | staleTime | gcTime | refetchInterval | Notes |
+|----------|-----------|--------|-----------------|-------|
+| `/v1/analytics/overview` | 5 min | 30 min | — | Executive data, daily freshness |
+| `/v1/analytics/adoption` | 5 min | 30 min | — | Hourly freshness sufficient |
+| `/v1/analytics/delivery` | 5 min | 30 min | — | Hourly freshness sufficient |
+| `/v1/analytics/cost` | 5 min | 30 min | — | Daily freshness |
+| `/v1/analytics/quality` | 5 min | 30 min | — | Daily freshness |
+| `/v1/analytics/operations` | 30 sec | 5 min | **60s** | Action-oriented, minutes freshness |
+| `/v1/analytics/sessions/:id` | 10 min | 60 min | — | On-demand, immutable after complete |
+| `/v1/analytics/notifications` | 30 sec | 5 min | **60s** | Alert timeliness |
+| `/v1/user/profile` | 30 min | 60 min | — | Rarely changes |
+| `/v1/user/settings` | 30 min | 60 min | — | Rarely changes |
+
+### 3.5 Error Handling Taxonomy
+
+| HTTP Status | Code | Category | Recovery | UI Behavior |
+|-------------|------|----------|----------|-------------|
+| 401 | `UNAUTHORIZED` | Auth | Redirect to `/api/auth/refresh` | Transparent to user |
+| 403 | `FORBIDDEN` | Auth | None | Show restricted access message |
+| 404 | `NOT_FOUND` | Data | None | Show empty state |
+| 422 | `VALIDATION_ERROR` | Client | Fix input | Show validation error inline |
+| 429 | `RATE_LIMITED` | Throttle | Retry after `Retry-After` header | Show "too many requests" toast |
+| 500+ | `INTERNAL_ERROR` | Server | Retry (2 attempts, exponential backoff) | Show inline error + retry button |
+
+---
+
+## 4. State Management
+
+### 4.1 Architecture
+
+```
+MobX Stores (UI state)                TanStack Query (server state)
+─────────────────────                  ──────────────────────────────
+FilterStore  ──→ query key changes ──→ auto-refetch
+UIStore      ──→ sidebar, mobile       cache, deduplication, background
+AuthStore    ──→ user, role, org       stale-while-revalidate
+NotificationStore ──→ in-memory        polling for notifications
+UserSettingsStore ──→ theme, tz        polling disabled (manual refresh)
+```
+
+**Rule**: MobX is never used for server data. TanStack Query is never used for UI state.
+
+### 4.2 RootStore
+
+```typescript
+// src/app/stores.ts
+import { FilterStore } from '@features/filter-management';
+import { AuthStore } from '@features/auth';
+import { NotificationStore } from '@entities/notification';
+import { UserSettingsStore } from '@entities/user';
+import { UIStore } from '@shared/model/UIStore';
+
+export class RootStore {
+  filter = new FilterStore();
+  ui = new UIStore();
+  auth = new AuthStore();
+  notification = new NotificationStore();
+  userSettings = new UserSettingsStore();
+}
+
+// React context
+const StoreContext = createContext<RootStore | null>(null);
+export const useStore = () => {
+  const store = useContext(StoreContext);
+  if (!store) throw new Error('useStore must be used within MobXStoresProvider');
+  return store;
+};
+```
+
+### 4.3 FilterStore
+
+```typescript
+// src/features/filter-management/model/FilterStore.ts
+import { makeAutoObservable } from 'mobx';
+
+export interface FilterState {
+  teamIds: string[];
+  repoIds: string[];
+  model: string | null;
+  taskType: TaskType | null;
+  language: string | null;
+  timeRange: string;       // '7d' | '30d' | '90d' | 'start..end'
+  granularity: Granularity;
+  comparison: boolean;
+}
+
+export type TaskType = 'bugfix' | 'feature' | 'refactor' | 'test' | 'ops';
+export type Granularity = 'hourly' | 'daily' | 'weekly' | 'monthly';
+
+export class FilterStore {
+  teamIds: string[] = [];
+  repoIds: string[] = [];
+  model: string | null = null;
+  taskType: TaskType | null = null;
+  language: string | null = null;
+  timeRange = '30d';
+  granularity: Granularity = 'daily';
+  comparison = false;
+
+  constructor() {
+    makeAutoObservable(this);
+  }
+
+  setFilter<K extends keyof FilterState>(key: K, value: FilterState[K]) {
+    (this as any)[key] = value;
+  }
+
+  resetFilters() {
+    this.teamIds = [];
+    this.repoIds = [];
+    this.model = null;
+    this.taskType = null;
+    this.language = null;
+    this.timeRange = '30d';
+    this.granularity = 'daily';
+    this.comparison = false;
+  }
+
+  get serialized(): FilterState {
+    return {
+      teamIds: this.teamIds,
+      repoIds: this.repoIds,
+      model: this.model,
+      taskType: this.taskType,
+      language: this.language,
+      timeRange: this.timeRange,
+      granularity: this.granularity,
+      comparison: this.comparison,
+    };
+  }
+
+  get hasActiveFilters(): boolean {
+    return this.teamIds.length > 0 || this.repoIds.length > 0
+      || this.model !== null || this.taskType !== null || this.language !== null;
+  }
+}
+```
+
+### 4.4 UIStore
+
+```typescript
+// src/shared/model/UIStore.ts
+import { makeAutoObservable } from 'mobx';
+
+export class UIStore {
+  sidebarCollapsed = false;
+  isMobile = false;
+
+  constructor() {
+    makeAutoObservable(this);
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sidebarCollapsed');
+      if (saved) this.sidebarCollapsed = JSON.parse(saved);
+    }
+  }
+
+  toggleSidebar() {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
+    localStorage.setItem('sidebarCollapsed', JSON.stringify(this.sidebarCollapsed));
+  }
+
+  setMobile(isMobile: boolean) {
+    this.isMobile = isMobile;
+  }
+}
+```
+
+### 4.5 AuthStore
+
+```typescript
+// src/features/auth/model/AuthStore.ts
+import { makeAutoObservable } from 'mobx';
+
+export enum Role {
+  VP_CTO = 'vp_cto',
+  ENG_MANAGER = 'eng_manager',
+  PLATFORM_ENG = 'platform_eng',
+  FINOPS = 'finops',
+  SECURITY = 'security',
+  IC_DEV = 'ic_dev',
+  ORG_ADMIN = 'org_admin',
+}
+
+export class AuthStore {
+  user: { id: string; email: string; name: string } | null = null;
+  role: Role | null = null;
+  orgId: string | null = null;
+  teams: string[] = [];
+  permissions: string[] = [];
+  initialized = false;
+
+  constructor() {
+    makeAutoObservable(this);
+  }
+
+  setAuth(data: { user: typeof this.user; role: Role; orgId: string; teams: string[]; permissions: string[] }) {
+    this.user = data.user;
+    this.role = data.role;
+    this.orgId = data.orgId;
+    this.teams = data.teams;
+    this.permissions = data.permissions;
+    this.initialized = true;
+  }
+
+  get isAuthenticated() { return this.user !== null; }
+
+  hasPermission(permission: string) {
+    return this.role === Role.ORG_ADMIN || this.permissions.includes(permission);
+  }
+}
+```
+
+### 4.6 NotificationStore & UserSettingsStore
+
+```typescript
+// src/entities/notification/model/NotificationStore.ts
+export class NotificationStore {
+  notifications: Notification[] = [];
+  constructor() { makeAutoObservable(this); }
+
+  get unreadCount() { return this.notifications.filter(n => !n.read).length; }
+  setNotifications(items: Notification[]) { this.notifications = items; }
+  markRead(id: string) { /* optimistic update */ }
+  dismiss(id: string) { /* optimistic update */ }
+}
+
+// src/entities/user/model/UserSettingsStore.ts
+export class UserSettingsStore {
+  theme: 'light' | 'dark' | 'system' = 'system';
+  timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  defaultView = 'executive-overview';
+  digestFrequency: 'weekly' | 'disabled' = 'disabled';
+  language = 'en';
+  constructor() { makeAutoObservable(this); }
+}
+```
+
+### 4.7 URL Sync
+
+```typescript
+// src/features/filter-management/lib/URLSyncProvider.tsx
+'use client';
+import { reaction } from 'mobx';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useStore } from '@app/stores';
+import { useEffect, useRef } from 'react';
+
+export function URLSyncProvider({ children }: { children: React.ReactNode }) {
+  const { filter } = useStore();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const skipSync = useRef(false);
+
+  // URL → FilterStore (on mount + popstate)
+  useEffect(() => {
+    skipSync.current = true;
+    const timeRange = searchParams.get('time_range');
+    if (timeRange) filter.setFilter('timeRange', timeRange);
+    const teams = searchParams.getAll('team_id');
+    if (teams.length) filter.setFilter('teamIds', teams);
+    // ... other params
+    skipSync.current = false;
+  }, [searchParams]);
+
+  // FilterStore → URL (on change)
+  useEffect(() => {
+    const dispose = reaction(
+      () => filter.serialized,
+      (filters) => {
+        if (skipSync.current) return;
+        const params = new URLSearchParams();
+        if (filters.timeRange !== '30d') params.set('time_range', filters.timeRange);
+        filters.teamIds.forEach(id => params.append('team_id', id));
+        // ... other params
+        router.replace(`?${params.toString()}`, { scroll: false });
+      },
+    );
+    return dispose;
+  }, [filter, router]);
+
+  return <>{children}</>;
+}
+```
+
+### 4.8 TanStack Query Client
+
+```typescript
+// src/shared/api/query-client.ts
+import { QueryClient } from '@tanstack/react-query';
+
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,     // 5 min
+      gcTime: 30 * 60 * 1000,       // 30 min
+      retry: 2,
+      refetchOnWindowFocus: true,
+    },
+  },
+});
+```
+
+| Store | FSD Layer | Persistence | Scope |
+|-------|-----------|-------------|-------|
+| FilterStore | `features/filter-management` | URL query params | Per-session |
+| UIStore | `shared/model` | `localStorage` | Cross-session |
+| AuthStore | `features/auth` | Memory (from JWT) | Per-session |
+| NotificationStore | `entities/notification` | Memory (API polling) | Per-session |
+| UserSettingsStore | `entities/user` | API + `localStorage` cache | Cross-session |
+
+---
+
+## 5. Auth Implementation
+
+### 5.1 Edge Middleware
+
+```typescript
+// src/app/middleware.ts
+import { jwtVerify } from 'jose';
+import { NextRequest, NextResponse } from 'next/server';
+import { ROUTE_PERMISSIONS } from '@shared/config/permissions';
+
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
+
+export async function dashboardMiddleware(req: NextRequest) {
+  const token = req.cookies.get('auth_token')?.value;
+
+  if (!token) {
+    return NextResponse.redirect(new URL(
+      `${process.env.IDP_ISSUER_URL}/authorize?redirect_uri=${process.env.NEXT_PUBLIC_APP_URL}/api/auth/callback`,
+      req.url,
+    ));
+  }
+
+  try {
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const role = payload.role as string;
+    const pathname = req.nextUrl.pathname;
+
+    // Check route permissions
+    const allowed = ROUTE_PERMISSIONS[pathname];
+    if (allowed && !allowed.includes(role) && role !== 'org_admin') {
+      // Redirect to default view for this role
+      return NextResponse.redirect(new URL('/dashboard', req.url));
+    }
+
+    // Proactive refresh: if token expires within 5 minutes
+    const exp = (payload.exp ?? 0) * 1000;
+    if (exp - Date.now() < 5 * 60 * 1000) {
+      const response = NextResponse.next();
+      response.headers.set('x-token-refresh', 'true');
+      return response;
+    }
+
+    return NextResponse.next();
+  } catch {
+    // Invalid token → re-auth
+    const response = NextResponse.redirect(new URL('/api/auth/logout', req.url));
+    return response;
+  }
+}
+
+// app/middleware.ts
+export { dashboardMiddleware as middleware } from '@app/middleware';
+export const config = { matcher: '/dashboard/:path*' };
+```
+
+### 5.2 Route Permission Map
+
+```typescript
+// src/shared/config/permissions.ts
+import { Role } from '@features/auth';
+
+export const ROUTE_PERMISSIONS: Record<string, Role[]> = {
+  '/dashboard':           [Role.VP_CTO, Role.ENG_MANAGER, Role.FINOPS],
+  '/dashboard/adoption':  [Role.VP_CTO, Role.ENG_MANAGER, Role.PLATFORM_ENG, Role.IC_DEV],
+  '/dashboard/delivery':  [Role.VP_CTO, Role.ENG_MANAGER, Role.PLATFORM_ENG, Role.IC_DEV],
+  '/dashboard/cost':      [Role.VP_CTO, Role.ENG_MANAGER, Role.FINOPS],
+  '/dashboard/quality':   [Role.ENG_MANAGER, Role.SECURITY],
+  '/dashboard/operations':[Role.ENG_MANAGER, Role.PLATFORM_ENG],
+  '/dashboard/settings':  Object.values(Role), // all roles
+};
+// Note: /dashboard/sessions/* uses data-level filtering (own sessions for IC_DEV)
+```
+
+### 5.3 Auth Route Handlers
+
+| Route | Method | Request | Response | Side Effects |
+|-------|--------|---------|----------|-------------|
+| `/api/auth/callback` | GET | `?code=...&state=...` | 302 → `/dashboard` | Exchange code → JWT, set `httpOnly` cookie |
+| `/api/auth/logout` | GET/POST | — | 302 → IdP logout | Clear cookie, terminate IdP session |
+| `/api/auth/refresh` | GET | Cookie | 200 + new cookie | Silent JWT rotation |
+| `/api/auth/me` | GET | Cookie | `{ user, role, orgId, teams, permissions }` | None |
+
+### 5.4 AuthGuard (Client-Side RBAC)
+
+```typescript
+// src/features/auth/ui/AuthGuard.tsx
+'use client';
+import { observer } from 'mobx-react-lite';
+import { useStore } from '@app/stores';
+
+interface AuthGuardProps {
+  roles?: Role[];
+  fallback?: React.ReactNode;
+  children: React.ReactNode;
+}
+
+export const AuthGuard = observer(function AuthGuard({ roles, fallback, children }: AuthGuardProps) {
+  const { auth } = useStore();
+
+  if (!auth.initialized) return null; // loading
+  if (!auth.isAuthenticated) return null; // should not happen (middleware handles)
+
+  if (roles && auth.role && !roles.includes(auth.role) && auth.role !== Role.ORG_ADMIN) {
+    return fallback ?? <RestrictedAccessMessage />;
+  }
+
+  return <>{children}</>;
+});
+```
+
+### 5.5 JWT Payload
+
+```typescript
+interface JWTPayload {
+  sub: string;          // user ID
+  email: string;
+  name: string;
+  role: Role;
+  org_id: string;
+  teams: string[];
+  permissions: string[];
+  exp: number;
+  iat: number;
+}
+```
+
+---
+
+## 6. Routing & Navigation
+
+### 6.1 Layout Tree
+
+```
+app/dashboard/
+├── layout.tsx           ← Server Component: metadata + Providers wrapper
+│   └── <Providers>      ← Client: Analytics → ErrorTracker → I18n → Theme → Query → MobX → URLSync → AuthGuard → AppShell
+│       └── {children}   ← page content
+├── loading.tsx          ← Global skeleton fallback
+├── error.tsx            ← Error boundary → IErrorTracker.captureError()
+├── page.tsx             ← Executive Overview (default)
+├── adoption/
+│   ├── page.tsx         ← Adoption view
+│   └── [teamId]/
+│       └── page.tsx     ← Team drill-down
+├── delivery/
+│   ├── page.tsx
+│   └── [teamId]/page.tsx
+├── cost/
+│   ├── page.tsx
+│   └── [teamId]/page.tsx
+├── quality/page.tsx
+├── operations/page.tsx
+├── sessions/
+│   └── [sessionId]/page.tsx  ← Session Deep-Dive
+└── settings/page.tsx
+```
+
+### 6.2 Thin Page Wrapper Pattern
+
+```typescript
+// app/dashboard/adoption/page.tsx
+import { AdoptionPage } from '@pages/adoption';
+
+export const metadata = { title: 'Adoption & Usage — Dashboard' };
+
+export default function Page() {
+  return <AdoptionPage />;
+}
+```
+
+### 6.3 Provider Nesting Order
+
+```
+<AnalyticsProvider>           ← shared/lib/analytics (IAnalytics, IErrorTracker, ILogger stubs)
+  <ErrorBoundaryProvider>     ← error tracking wrapper
+    <I18nProvider>             ← next-intl
+      <ThemeProvider>          ← features/theme-switching
+        <QueryClientProvider>  ← shared/api
+          <MobXStoresProvider> ← RootStore context
+            <URLSyncProvider>  ← features/filter-management
+              <AuthGuard>      ← features/auth
+                <AppShell>     ← widgets/app-shell
+                  {children}
+                </AppShell>
+              </AuthGuard>
+            </URLSyncProvider>
+          </MobXStoresProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </I18nProvider>
+  </ErrorBoundaryProvider>
+</AnalyticsProvider>
+```
+
+### 6.4 Breadcrumbs
+
+```typescript
+// src/widgets/breadcrumbs/ui/Breadcrumbs.tsx
+const DISPLAY_NAMES: Record<string, string> = {
+  dashboard: 'Dashboard',
+  adoption: 'Adoption & Usage',
+  delivery: 'Delivery Impact',
+  cost: 'Cost & Budgets',
+  quality: 'Quality & Security',
+  operations: 'Operations',
+  sessions: 'Session',
+  settings: 'Settings',
+};
+// Dynamic segments ([teamId], [sessionId]) → fetched from API or store
+```
+
+### 6.5 Drill-Down Routing
+
+```
+/dashboard                                    ← Executive Overview
+/dashboard/adoption                           ← Adoption view
+/dashboard/adoption/team-abc123               ← Team drill-down
+/dashboard/sessions/sess-xyz789               ← Session Deep-Dive
+/dashboard/sessions/sess-xyz789?step=5        ← Deep link to step
+```
+
+Session Deep-Dive is **not in sidebar** — reached only via row click in Adoption, Delivery, or Operations tables.
+
+---
+
+## 7. Component Specs (per FSD Layer)
+
+### 7.1 `shared/ui/theme/` — Design Tokens
+
+```css
+/* src/shared/ui/theme/tokens.css */
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --destructive: 0 84.2% 60.2%;
+  --border: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
+  --radius: 0.5rem;
+  /* Chart palette — distinguishable for color-blind users */
+  --chart-1: 221 83% 53%;
+  --chart-2: 142 76% 36%;
+  --chart-3: 38 92% 50%;
+  --chart-4: 0 84% 60%;
+  --chart-5: 262 83% 58%;
+}
+
+.dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --primary: 217.2 91.2% 59.8%;
+  --primary-foreground: 222.2 47.4% 11.2%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --destructive: 0 62.8% 30.6%;
+  --border: 217.2 32.6% 17.5%;
+  --ring: 224.3 76.3% 48%;
+  --chart-1: 217 91% 60%;
+  --chart-2: 142 71% 45%;
+  --chart-3: 38 92% 50%;
+  --chart-4: 0 63% 31%;
+  --chart-5: 262 83% 68%;
+}
+```
+
+```typescript
+// src/shared/ui/theme/tailwind-preset.ts
+import type { Config } from 'tailwindcss';
+
+export default {
+  theme: {
+    extend: {
+      colors: {
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        primary: { DEFAULT: 'hsl(var(--primary))', foreground: 'hsl(var(--primary-foreground))' },
+        muted: { DEFAULT: 'hsl(var(--muted))', foreground: 'hsl(var(--muted-foreground))' },
+        destructive: { DEFAULT: 'hsl(var(--destructive))' },
+        border: 'hsl(var(--border))',
+        ring: 'hsl(var(--ring))',
+        chart: {
+          1: 'hsl(var(--chart-1))',
+          2: 'hsl(var(--chart-2))',
+          3: 'hsl(var(--chart-3))',
+          4: 'hsl(var(--chart-4))',
+          5: 'hsl(var(--chart-5))',
+        },
+      },
+      borderRadius: { DEFAULT: 'var(--radius)' },
+    },
+  },
+} satisfies Partial<Config>;
+```
+
+### 7.2 `shared/lib/` — Utilities
+
+```typescript
+// src/shared/lib/formatters.ts
+export function formatNumber(value: number, opts?: Intl.NumberFormatOptions): string {
+  return new Intl.NumberFormat('en-US', opts).format(value);
+}
+
+export function formatCurrency(value: number): string {
+  return formatNumber(value, { style: 'currency', currency: 'USD', maximumFractionDigits: 2 });
+}
+
+export function formatDuration(ms: number): string {
+  if (ms < 1000) return `${ms}ms`;
+  if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`;
+  return `${Math.floor(ms / 60_000)}m ${Math.round((ms % 60_000) / 1000)}s`;
+}
+
+export function formatCompactNumber(value: number): string {
+  return formatNumber(value, { notation: 'compact', maximumFractionDigits: 1 });
+}
+```
+
+```typescript
+// src/shared/lib/hooks/useMediaQuery.ts
+'use client';
+import { useEffect } from 'react';
+import { useStore } from '@app/stores';
+
+export function useMediaQuerySync() {
+  const { ui } = useStore();
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 767px)');
+    const handler = (e: MediaQueryListEvent) => ui.setMobile(e.matches);
+    ui.setMobile(mql.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, [ui]);
+}
+```
+
+### 7.3 `entities/metric/ui/` — KPICard & ChartContainer
+
+```typescript
+// KPICard props
+interface KPICardProps {
+  label: string;
+  value: string | number;
+  format?: 'number' | 'currency' | 'percent' | 'duration';
+  delta?: { value: number; direction: 'up' | 'down' | 'neutral' };
+  sparklineData?: number[];
+  loading?: boolean;
+}
+
+// DeltaIndicator props
+interface DeltaIndicatorProps {
+  value: number;
+  direction: 'up' | 'down' | 'neutral';
+  invertColor?: boolean; // true for metrics where "down" is good (e.g., cost)
+}
+
+// ChartContainer props
+interface ChartContainerProps {
+  title: string;
+  loading?: boolean;
+  error?: Error | null;
+  onRetry?: () => void;
+  isEmpty?: boolean;
+  children: React.ReactNode;
+  /** Hidden data table for screen readers — required for a11y */
+  accessibilityData?: { headers: string[]; rows: (string | number)[][] };
+}
+```
+
+`ChartContainer` renders: skeleton when `loading`, inline error + retry when `error`, empty state when `isEmpty`, children otherwise. Always renders hidden `<table>` from `accessibilityData` for screen readers.
+
+### 7.4 `features/` — Key Components
+
+| Component | Props | Behavior |
+|-----------|-------|----------|
+| **FilterBar** | `store: FilterStore` | Renders active filters as removable chips; shows filter dropdowns |
+| **DateRangePicker** | `store: FilterStore, viewDefault: string` | Presets (7d/30d/90d/Custom); dual calendar for custom range |
+| **PeriodComparisonToggle** | `store: FilterStore` | Toggle switch; enables delta indicators + dashed overlay on charts |
+| **ExportButton** | `filters: FilterState, endpoint: string` | Dropdown: CSV/NDJSON; triggers download respecting current filters |
+| **ThemeToggle** | — | Reads/writes `UserSettingsStore.theme`; sun/moon icon |
+| **ThemeProvider** | `children` | Reads: UserSettingsStore → localStorage → `prefers-color-scheme`; applies `dark` class to `<html>` |
+| **AuthGuard** | `roles?, fallback?, children` | Client-side RBAC; renders children or restricted fallback |
+
+### 7.5 `widgets/` — Key Components
+
+| Widget | Description | Dependencies |
+|--------|-------------|-------------|
+| **AppShell** | Sidebar + header (NotificationCenter, ThemeToggle, UserMenu) + scrollable content | sidebar-nav, notification-center, user-menu, breadcrumbs, theme-switching |
+| **SidebarNav** | 6 view links + Settings; active highlight; hamburger on mobile | UIStore, route constants |
+| **Breadcrumbs** | Auto from pathname + display name map | Next.js `usePathname` |
+| **NotificationCenter** | Bell + unread badge + dropdown list; mark read/dismiss | entities/notification |
+| **UserMenu** | Avatar dropdown: profile info, Settings link, IdP link, Logout | features/auth, entities/user |
+| **EmptyState** | (1) Onboarding guide for new orgs, (2) No-data-for-filters + reset button | features/filter-management |
+| **DataTable** | Cursor pagination, sortable columns, row click → drill-down route | shared/ui/Table |
+| **SessionTimeline** | Vertical timeline of Think/Act/Observe steps (see §8) | — |
+| **CostBreakdown** | Horizontal bar chart: LLM + compute cost per step; total KPI | entities/metric |
+
+### 7.6 `pages/` — Composition Table
+
+| Page | Route | Query Hook | Widgets Used | Grid | Mobile |
+|------|-------|-----------|-------------|------|--------|
+| Executive Overview | `/dashboard` | `useOverview` | KPICard ×6, ChartContainer (area), FilterBar | 3-col KPI + 2-col charts | KPI tiles only |
+| Adoption | `/dashboard/adoption` | `useAdoption` | ChartContainer (line, funnel, pie, bar), DataTable, FilterBar | 2-col charts + table | DAU/WAU/MAU partial |
+| Delivery | `/dashboard/delivery` | `useDelivery` | ChartContainer (bar, line, grouped bar), DataTable, FilterBar | 2-col charts + table | Not available |
+| Cost | `/dashboard/cost` | `useCost` | ChartContainer (stacked bar, area), KPICard, FilterBar | 3-col KPI + 2-col charts | Alerts only |
+| Quality | `/dashboard/quality` | `useQuality` | ChartContainer (bar, pie), DataTable (violations), FilterBar | 2-col charts + table | Alerts only |
+| Operations | `/dashboard/operations` | `useOperations` (60s poll) | ChartContainer (area, bar), KPICard, FilterBar | 3-col KPI + 2-col charts | Triage view |
+| Session Deep-Dive | `/dashboard/sessions/[sessionId]` | `useSession` | SessionTimeline, CostBreakdown | Single-col timeline | Not available |
+| Settings | `/dashboard/settings` | `useSettings` | Form controls | Single-col form | Full |
+
+---
+
+## 8. Session Deep-Dive
+
+### 8.1 Data Types
+
+```typescript
+// src/entities/session/model/types.ts
+export interface Session {
+  id: string;
+  taskId: string;
+  status: 'running' | 'completed' | 'failed';
+  startedAt: string;
+  completedAt: string | null;
+  totalCost: number;
+  totalDuration: number;
+  steps: SessionStep[];
+}
+
+export type SessionStep = ThinkStep | ActStep | ObserveStep;
+
+interface BaseStep {
+  id: string;
+  index: number;
+  status: 'success' | 'error' | 'skipped';
+  startedAt: string;
+  duration: number;
+  cost: number;
+}
+
+export interface ThinkStep extends BaseStep {
+  type: 'think';
+  model: string;
+  tokensIn: number;
+  tokensOut: number;
+  promptSummary: string;
+  responseSummary: string;
+  reasoningExcerpt?: string;
+}
+
+export interface ActStep extends BaseStep {
+  type: 'act';
+  toolName: string;
+  arguments: Record<string, unknown>;
+  resultSummary: string;
+}
+
+export interface ObserveStep extends BaseStep {
+  type: 'observe';
+  diffs: DiffFile[];
+  testOutput?: string;
+  ciResult?: { passed: boolean; summary: string };
+}
+
+export interface DiffFile {
+  path: string;
+  hunks: Array<{
+    oldStart: number;
+    oldLines: number;
+    newStart: number;
+    newLines: number;
+    content: string;
+  }>;
+  additions: number;
+  deletions: number;
+}
+```
+
+### 8.2 Step Rendering
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│ Session: sess-xyz789          Status: Completed    Cost: $1.24   │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ● Think (Step 1)                           0.8s    $0.12       │
+│  │  Model: claude-sonnet-4-5 · 1.2k → 3.4k tokens              │
+│  │  > Analyzing repository structure...                          │
+│  │  [▼ Expand reasoning]                                         │
+│  │                                                               │
+│  ● Act (Step 2)                             2.1s    $0.03       │
+│  │  Tool: file_edit · src/utils/parser.ts                        │
+│  │  > Modified parse function to handle edge case                │
+│  │                                                               │
+│  ● Observe (Step 3)                         5.4s    $0.08       │
+│  │  ✓ 3 files changed (+42 -12)                                  │
+│  │  ✓ Tests: 24/24 passed                                        │
+│  │  [▼ View diff]                                                │
+│  │                                                               │
+│  ...                                                             │
+│                                                                  │
+├──────────────────────────────────────────────────────────────────┤
+│ Cost Breakdown            [═══ LLM $0.89 ═══|══ Compute $0.35 ══]│
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### 8.3 Step Color & Icon Mapping
+
+| Step Type | Icon | Color (light) | Color (dark) | Expanded Content |
+|-----------|------|--------------|-------------|-----------------|
+| Think | `Brain` | `chart-1` (blue) | `chart-1` | Model, tokens, prompt/response summary, reasoning |
+| Act | `Wrench` | `chart-2` (green) | `chart-2` | Tool name, arguments (JSON), result summary |
+| Observe | `Eye` | `chart-3` (amber) | `chart-3` | Diffs (→ DiffViewer), test output, CI results |
+| Error | `AlertCircle` | `destructive` | `destructive` | Error message, stack trace (if available) |
+
+### 8.4 DiffViewer
+
+- Library: `react-diff-view` (unified/split mode toggle)
+- Syntax highlighting: `shiki` (loads grammar lazily per language)
+- File tree navigation for multi-file changes
+- Collapsible hunks, line numbers, copy button
+
+### 8.5 Cost Breakdown
+
+Recharts horizontal `BarChart`:
+- Segment by model for LLM cost (multi-model support)
+- Separate bar for compute cost
+- Total session cost as KPICard above chart
+
+### 8.6 Performance
+
+- Virtualized timeline for sessions with >50 steps (react-window `VariableSizeList`)
+- Deep link support: `?step=5` → auto-scroll + expand
+
+---
+
+## 9. Responsive & Mobile
+
+### 9.1 Breakpoints
+
+| Breakpoint | Tailwind | Width | Layout Change |
+|------------|----------|-------|--------------|
+| `sm` | `sm:` | ≥640px | Minor adjustments |
+| `md` | `md:` | ≥768px | **Mobile threshold**: sidebar visible, 2-col charts |
+| `lg` | `lg:` | ≥1024px | 3-col KPI grid |
+| `xl` | `xl:` | ≥1280px | Full dashboard layout |
+| `2xl` | `2xl:` | ≥1536px | Extra spacing |
+
+### 9.2 Mobile Behavior (< 768px)
+
+| View | Mobile Scope | Behavior |
+|------|-------------|----------|
+| Executive Overview | KPI tiles + sparklines | 1-col KPI stack |
+| Adoption & Usage | DAU/WAU/MAU trends (partial) | Simplified line chart |
+| Cost & Budgets | Alerts only | Budget alert cards |
+| Quality & Security | Alerts only | Violation alert cards |
+| Operations | Triage (queue + failures) | KPI cards + failure list |
+| Delivery Impact | **Not available** | "Open on desktop" message |
+| Session Deep-Dive | **Not available** | "Open on desktop" message |
+| Settings | Full | Single-col form |
+
+### 9.3 Unavailable View Component
+
+```typescript
+// src/widgets/empty-state/ui/MobileUnavailable.tsx
+export function MobileUnavailable({ viewName }: { viewName: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center p-8 text-center">
+      <Monitor className="h-12 w-12 text-muted-foreground mb-4" />
+      <h2 className="text-lg font-semibold">{viewName}</h2>
+      <p className="text-muted-foreground mt-2">
+        This view requires a wider screen. Open on desktop for the full experience.
+      </p>
+    </div>
+  );
+}
+```
+
+### 9.4 Sidebar
+
+- `≥ 768px`: full sidebar, collapsible (UIStore.sidebarCollapsed)
+- `< 768px`: hidden by default, hamburger menu opens overlay sidebar
+- Touch target: 44×44px minimum for all interactive elements
+
+---
+
+## 10. Performance
+
+### 10.1 Budgets
+
+| Metric | Target | Tool |
+|--------|--------|------|
+| JS bundle (gzip) | < 250KB | `next build` + `@next/bundle-analyzer` |
+| LCP | < 2.5s (p95) | Web Vitals API |
+| INP | < 200ms (p95) | Web Vitals API |
+| CLS | < 0.1 | Web Vitals API |
+| TTFB | < 800ms | Web Vitals API |
+| View load (p95) | < 2s | Custom measurement |
+| API response (p95) | < 500ms | Server-side (Analytics API) |
+
+### 10.2 Code Splitting Strategy
+
+```typescript
+// Per-route splitting: automatic via Next.js App Router
+
+// Heavy component lazy loading:
+import dynamic from 'next/dynamic';
+
+const SessionTimeline = dynamic(
+  () => import('@widgets/session-timeline').then(m => m.SessionTimeline),
+  { loading: () => <Skeleton className="h-96" /> },
+);
+
+const DiffViewer = dynamic(
+  () => import('@widgets/session-timeline').then(m => m.DiffViewer),
+  { loading: () => <Skeleton className="h-64" /> },
+);
+
+// Recharts lazy loading per chart type (inside ChartContainer)
+const AreaChart = dynamic(() => import('recharts').then(m => m.AreaChart));
+```
+
+### 10.3 Additional Optimizations
+
+- **Fonts**: `next/font` with `display: 'swap'` (no FOIT)
+- **Icons**: tree-shaken Lucide imports (`import { Brain } from 'lucide-react'`)
+- **Images**: `next/image` for user avatars
+- **Skeleton loading**: every data-dependent component renders its own skeleton independently
+- **Prefetching**: `<Link prefetch>` for sidebar navigation links
+- **Chart virtualization**: `react-window` for DataTable rows and SessionTimeline steps
+
+---
+
+## 11. Testing Strategy
+
+### 11.1 Testing Pyramid (FSD-Aligned)
+
+| Level | FSD Layer | What to Mock | Coverage Target |
+|-------|-----------|-------------|----------------|
+| Unit | `shared/`, `entities/model/`, `features/model/` | Nothing or minimal | 80% |
+| Slice | `entities/`, `features/` | `shared/api/` via MSW | 80% |
+| Widget integration | `widgets/` | `shared/api/` via MSW | 60% |
+| Page integration | `pages/` | `shared/api/` via MSW | 60% |
+| E2E | `app/` + all layers | MSW-backed API | Critical paths |
+
+### 11.2 MSW Setup
+
+```typescript
+// src/shared/__mocks__/handlers.ts
+import { http, HttpResponse } from 'msw';
+import overviewFixture from './fixtures/overview.json';
+
+export const handlers = [
+  http.get('*/v1/analytics/overview', () => {
+    return HttpResponse.json(overviewFixture);
+  }),
+  http.get('*/v1/analytics/adoption', () => {
+    return HttpResponse.json(adoptionFixture);
+  }),
+  // ... one handler per endpoint, generated from OpenAPI
+];
+```
+
+### 11.3 Jest Test Example
+
+```typescript
+// src/pages/executive-overview/api/useOverview.test.ts
+import { renderHook, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useOverview } from './useOverview';
+
+const wrapper = ({ children }) => (
+  <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+    {children}
+  </QueryClientProvider>
+);
+
+test('fetches overview data', async () => {
+  const { result } = renderHook(() => useOverview(defaultFilters), { wrapper });
+  await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  expect(result.current.data.activeUsers).toBeDefined();
+});
+```
+
+### 11.4 Contract Testing
+
+CI step validates Zod schemas against `openapi.yaml`:
+
+```bash
+# scripts/validate-contracts.ts
+# Parses openapi.yaml → generates expected shape → compares with Zod schemas
+# Fails build if schemas are out of sync
+```
+
+### 11.5 E2E Scenarios
+
+| Scenario | Steps | Priority |
+|----------|-------|----------|
+| Login → Dashboard → Navigate views | Visit /dashboard → verify KPIs → click sidebar links | P0 |
+| Apply filters → verify data refresh | Select team → verify URL update → verify chart data | P0 |
+| Drill-down → Session Deep-Dive | Click session row → verify timeline renders → expand step | P0 |
+| Export CSV | Apply filters → click export → verify download | P0 |
+| Theme toggle | Click toggle → verify dark class → refresh → verify persistence | P1 |
+| Notification center | Open dropdown → mark read → verify badge update | P1 |
+| Mobile responsive | Resize viewport → verify sidebar collapse → verify unavailable views | P1 |
+
+---
+
+## 12. Observability — Abstractions & Stubs
+
+### 12.1 Interfaces
+
+```typescript
+// src/shared/lib/analytics/interfaces.ts
+
+export interface IErrorTracker {
+  captureError(error: Error, context?: Record<string, unknown>): void;
+  setUser(user: { id: string; email: string; role: string }): void;
+  addBreadcrumb(crumb: { category: string; message: string; data?: Record<string, unknown> }): void;
+}
+
+export interface IAnalytics {
+  trackEvent(event: AnalyticsEvent): void;
+  identify(userId: string, traits: Record<string, unknown>): void;
+  page(name: string, properties?: Record<string, unknown>): void;
+}
+
+export interface ILogger {
+  debug(message: string, context?: Record<string, unknown>): void;
+  info(message: string, context?: Record<string, unknown>): void;
+  warn(message: string, context?: Record<string, unknown>): void;
+  error(message: string, context?: Record<string, unknown>): void;
+}
+```
+
+### 12.2 Stub Implementations
+
+```typescript
+// src/shared/lib/analytics/stubs.ts
+
+export class ConsoleErrorTracker implements IErrorTracker {
+  captureError(error: Error, context?: Record<string, unknown>) {
+    console.error('[ErrorTracker]', error.message, context);
+  }
+  setUser(user: { id: string }) {
+    console.debug('[ErrorTracker] setUser', user.id);
+  }
+  addBreadcrumb(crumb: { category: string; message: string }) {
+    console.debug('[ErrorTracker] breadcrumb', crumb.category, crumb.message);
+  }
+}
+
+export class ConsoleAnalytics implements IAnalytics {
+  trackEvent(event: AnalyticsEvent) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Analytics]', event.type, event);
+    }
+  }
+  identify(userId: string, traits: Record<string, unknown>) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Analytics] identify', userId, traits);
+    }
+  }
+  page(name: string, properties?: Record<string, unknown>) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Analytics] page', name, properties);
+    }
+  }
+}
+
+export class ConsoleLogger implements ILogger {
+  debug(msg: string, ctx?: Record<string, unknown>) { console.debug(msg, ctx); }
+  info(msg: string, ctx?: Record<string, unknown>)  { console.info(msg, ctx); }
+  warn(msg: string, ctx?: Record<string, unknown>)  { console.warn(msg, ctx); }
+  error(msg: string, ctx?: Record<string, unknown>) { console.error(msg, ctx); }
+}
+```
+
+### 12.3 Provider (Dependency Injection)
+
+```typescript
+// src/shared/lib/analytics/provider.tsx
+'use client';
+import { createContext, useContext } from 'react';
+import { ConsoleErrorTracker, ConsoleAnalytics, ConsoleLogger } from './stubs';
+
+interface ObservabilityContextValue {
+  errorTracker: IErrorTracker;
+  analytics: IAnalytics;
+  logger: ILogger;
+}
+
+const ObservabilityContext = createContext<ObservabilityContextValue>({
+  errorTracker: new ConsoleErrorTracker(),
+  analytics: new ConsoleAnalytics(),
+  logger: new ConsoleLogger(),
+});
+
+export const useErrorTracker = () => useContext(ObservabilityContext).errorTracker;
+export const useAnalytics = () => useContext(ObservabilityContext).analytics;
+export const useLogger = () => useContext(ObservabilityContext).logger;
+
+export function AnalyticsProvider({
+  errorTracker, analytics, logger, children,
+}: Partial<ObservabilityContextValue> & { children: React.ReactNode }) {
+  return (
+    <ObservabilityContext.Provider value={{
+      errorTracker: errorTracker ?? new ConsoleErrorTracker(),
+      analytics: analytics ?? new ConsoleAnalytics(),
+      logger: logger ?? new ConsoleLogger(),
+    }}>
+      {children}
+    </ObservabilityContext.Provider>
+  );
+}
+```
+
+### 12.4 Event Taxonomy
+
+```typescript
+// src/shared/lib/analytics/events.ts
+
+export type AnalyticsEvent =
+  | { type: 'view_visited'; view: string; role: string }
+  | { type: 'filter_applied'; filterType: string; value: string }
+  | { type: 'export_triggered'; format: 'csv' | 'ndjson'; view: string }
+  | { type: 'session_drilldown'; sessionId: string; fromView: string }
+  | { type: 'notification_opened' }
+  | { type: 'notification_read'; notificationId: string }
+  | { type: 'theme_changed'; theme: 'light' | 'dark' | 'system' }
+  | { type: 'alert_configured'; alertType: string; threshold: number }
+  | { type: 'data_load_failed'; view: string; endpoint: string; status: number }
+  | { type: 'slow_query'; view: string; duration: number }
+  | { type: 'empty_result'; view: string; filters: string };
+```
+
+| Event | Properties | Trigger Point |
+|-------|-----------|--------------|
+| `view_visited` | view, role | Page mount (via `usePathname`) |
+| `filter_applied` | filterType, value | FilterBar change |
+| `export_triggered` | format, view | ExportButton click |
+| `session_drilldown` | sessionId, fromView | DataTable row click |
+| `notification_opened` | — | Bell icon click |
+| `notification_read` | notificationId | Mark-read action |
+| `theme_changed` | theme | ThemeToggle click |
+| `data_load_failed` | view, endpoint, status | TanStack Query onError |
+| `slow_query` | view, duration | Response time > 2s |
+| `empty_result` | view, filters | Query returns 0 results |
+
+### 12.5 Error Boundary Integration
+
+```typescript
+// app/dashboard/error.tsx
+'use client';
+import { useErrorTracker } from '@shared/lib/analytics';
+
+export default function DashboardError({ error, reset }: { error: Error; reset: () => void }) {
+  const errorTracker = useErrorTracker();
+
+  useEffect(() => {
+    errorTracker.captureError(error, { boundary: 'dashboard' });
+  }, [error, errorTracker]);
+
+  return (
+    <div className="flex flex-col items-center justify-center p-8">
+      <h2 className="text-lg font-semibold">Something went wrong</h2>
+      <Button onClick={reset} className="mt-4">Try again</Button>
+    </div>
+  );
+}
+```
+
+---
+
+## 13. Accessibility (WCAG 2.1 AA)
+
+### 13.1 Requirements
+
+| WCAG Criterion | Implementation | Components |
+|---------------|----------------|-----------|
+| 1.4.3 Contrast | 4.5:1 text, 3:1 UI (both light and dark themes) | All |
+| 1.4.11 Non-text contrast | 3:1 for chart data, borders, icons | Charts, badges |
+| 1.3.1 Info & relationships | Charts never color-only: use patterns/shapes + labels | ChartContainer |
+| 2.1.1 Keyboard | All interactive elements focusable; Enter/Space activation | All |
+| 2.4.7 Focus visible | `focus-visible:ring-2 ring-ring` on all interactive elements | All |
+| 2.4.3 Focus order | Logical tab order: sidebar → header → content | AppShell |
+| 2.4.6 Headings | h1–h6 hierarchy per page; landmarks (`nav`, `main`, `aside`) | Pages, AppShell |
+| 4.1.2 Name/Role/Value | `aria-label` on charts, `aria-sort` on table columns | ChartContainer, DataTable |
+| 4.1.3 Status messages | `aria-live="polite"` for notifications, filter changes | NotificationCenter, FilterBar |
+| 2.3.1 Reduced motion | `prefers-reduced-motion` → disable transitions/animations | All animated |
+
+### 13.2 Chart Accessibility Pattern
+
+Every chart renders a hidden `<table>` for screen readers:
+
+```typescript
+// Inside ChartContainer
+<div role="img" aria-label={title}>
+  {/* visible chart */}
+  <ResponsiveContainer>{children}</ResponsiveContainer>
+
+  {/* screen reader fallback */}
+  {accessibilityData && (
+    <table className="sr-only">
+      <caption>{title}</caption>
+      <thead>
+        <tr>{accessibilityData.headers.map(h => <th key={h} scope="col">{h}</th>)}</tr>
+      </thead>
+      <tbody>
+        {accessibilityData.rows.map((row, i) => (
+          <tr key={i}>{row.map((cell, j) => <td key={j}>{cell}</td>)}</tr>
+        ))}
+      </tbody>
+    </table>
+  )}
+</div>
+```
+
+### 13.3 Focus Management
+
+- **Modals/dropdowns**: focus trap via `Dialog` from Shadcn/Radix
+- **Drill-down navigation**: focus moves to breadcrumbs after route change
+- **NotificationCenter dropdown**: focus returns to bell icon on close
+- **Sidebar collapse**: focus remains on toggle button
+
+### 13.4 Testing
+
+- `@axe-core/react` in development mode (overlay violations)
+- `jest-axe` in unit tests: `expect(await axe(container)).toHaveNoViolations()`
+- Playwright a11y audit: `page.accessibility.snapshot()` + axe checks
+
+---
+
+## 14. Storybook
+
+### 14.1 Setup
+
+```bash
+npx storybook@latest init --type nextjs
+```
+
+Configuration: `@storybook/nextjs` framework with Tailwind + Shadcn integration.
+
+**Decorators**:
+- `withTheme`: wraps stories in ThemeProvider, adds dark mode toggle to toolbar
+- `withI18n`: wraps in I18nProvider
+- `withStores`: wraps in MobXStoresProvider with configurable initial state
+
+### 14.2 Coverage by FSD Layer
+
+| FSD Layer | Coverage | Story Type |
+|-----------|----------|-----------|
+| `shared/ui/*` | **All** components | Visual: variants, sizes, states (disabled, loading) |
+| `entities/*/ui/*` | **All** (KPICard, DeltaIndicator, ChartContainer, NotificationItem) | Visual + interaction: loading/error/empty states |
+| `widgets/*` | **Key** (AppShell, SessionTimeline, DataTable, EmptyState) | Composition + interaction |
+| `features/*/ui/*` | **Selective** (FilterBar, ExportButton) | Interaction: filter add/remove, export flow |
+| `pages/*` | **Not covered** | Too many dependencies; tested via E2E |
+
+### 14.3 Story Conventions
+
+- **Format**: CSF3 (Component Story Format 3)
+- **File location**: colocated — `Button.stories.tsx` next to `Button.tsx`
+- **Controls**: `args` + `argTypes` for all configurable props
+- **Interaction tests**: `play` functions for click/type/keyboard flows
+- **A11y**: `@storybook/addon-a11y` enabled globally (WCAG AA audit in every story)
+- **Viewport**: `@storybook/addon-viewport` for responsive preview
+
+### 14.4 Example Story
+
+```typescript
+// src/entities/metric/ui/KPICard.stories.tsx
+import type { Meta, StoryObj } from '@storybook/react';
+import { KPICard } from './KPICard';
+
+const meta = {
+  title: 'entities/metric/KPICard',
+  component: KPICard,
+  args: {
+    label: 'Active Users',
+    value: 1234,
+    format: 'number',
+    delta: { value: 12.5, direction: 'up' },
+    sparklineData: [100, 120, 115, 130, 145, 160, 155],
+  },
+} satisfies Meta<typeof KPICard>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};
+
+export const Loading: Story = {
+  args: { loading: true },
+};
+
+export const NegativeDelta: Story = {
+  args: { delta: { value: -5.2, direction: 'down' } },
+};
+
+export const Currency: Story = {
+  args: { label: 'Cost per PR', value: 2.34, format: 'currency' },
+};
+```
+
+### 14.5 Addons
+
+| Addon | Purpose |
+|-------|---------|
+| `@storybook/addon-a11y` | WCAG audit in every story |
+| `@storybook/addon-viewport` | Responsive preview (mobile/tablet/desktop) |
+| `@storybook/addon-interactions` | Visual interaction testing |
+| `@storybook/addon-themes` | Dark/light mode toggle |
+
+---
+
+## 15. Build & Deploy
+
+### 15.1 CI/CD Pipeline (GitHub Actions)
+
+```yaml
+# .github/workflows/ci.yml (abbreviated)
+name: CI
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint                     # ESLint + boundaries
+      - run: pnpm typecheck                # tsc --noEmit
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test -- --coverage        # Jest
+      - run: pnpm validate-contracts        # Zod vs OpenAPI
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm codegen                   # openapi-typescript
+      - run: pnpm build
+      - run: pnpm dlx @next/bundle-analyzer  # verify < 250KB
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps
+      - run: pnpm e2e
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: e2e
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: --prod
+```
+
+### 15.2 CI Stages
+
+| Stage | Tool | Failure Behavior |
+|-------|------|-----------------|
+| Lint | ESLint + `eslint-plugin-boundaries` | Block merge |
+| Typecheck | `tsc --noEmit` | Block merge |
+| Unit tests | Jest + coverage | Block merge if coverage < threshold |
+| Contract validation | Custom script (Zod vs OpenAPI) | Block merge |
+| Build | `next build` | Block merge |
+| Bundle analysis | `@next/bundle-analyzer` | Warn if > 250KB |
+| E2E | Playwright | Block merge |
+| Deploy | Vercel | Auto on `main` |
+
+### 15.3 Vercel Configuration
+
+- **Preview deployments**: auto for every PR
+- **Production**: deploy on merge to `main`
+- **Environment variables**: set in Vercel dashboard (not in repo)
+- **Edge middleware**: supported natively by Vercel
+- **Regions**: auto (edge for middleware, serverless for route handlers)
+
+### 15.4 Source Maps
+
+- Generated during build
+- **Not deployed to production** (security)
+- Upload to error tracker when real implementation replaces stubs
+
+### 15.5 OpenAPI Codegen
+
+CI step before build:
+```bash
+npx openapi-typescript specs/openapi.yaml -o src/shared/api/types.generated.d.ts
+```
+Committed to repo for IDE support. CI validates freshness.
