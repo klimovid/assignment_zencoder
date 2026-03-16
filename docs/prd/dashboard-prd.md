@@ -100,7 +100,7 @@ Redirect to /dashboard
 | **Token refresh** | Silent rotation via `/api/auth/refresh` before expiry |
 | **Logout** | `/api/auth/logout` → clear cookie + IdP session termination |
 | **First-time user** | Auto-provisioned via SCIM sync → lands on default view per role |
-| **Auth routes** | `/api/auth/callback`, `/api/auth/logout`, `/api/auth/refresh` — Next.js Route Handlers |
+| **Auth routes** | `/api/auth/callback`, `/api/auth/logout`, `/api/auth/refresh`, `/api/auth/me` — Next.js Route Handlers |
 
 ---
 
@@ -131,7 +131,7 @@ Redirect to /dashboard
 | 4 | Cost & Budgets | Spend by team/repo/model, forecasts, budget alerts, $/task, $/PR | Stacked bar (spend), area (forecast), KPI cards |
 | 5 | Quality & Security | CI pass rate, review outcomes, policy violations, audit trail | Bar, pie, table (violations), line (trend) |
 | 6 | Operations | Queue depth, wait time, failure rate + categories, SLA | Area (queue), bar (failures), KPI (SLA %) |
-| 7 | Session Deep-Dive | Reasoning timeline, diffs, step trace, tool calls, cost | See detailed spec (4.2) |
+| 7 | Session Deep-Dive | Reasoning timeline, diffs, step trace, tool calls, cost | See detailed spec (5.2) |
 
 ### 5.2 Session Deep-Dive — Detailed Spec
 
@@ -159,14 +159,15 @@ Session Deep-Dive is a key differentiator (Devin "Glass-Box" pattern) — provid
 
 **Navigation**:
 - Drill-down entry points: session rows in Adoption, Delivery, and Operations views link directly to Session Deep-Dive
-- URL: `/dashboard/sessions/:session_id`
+- URL: `/dashboard/sessions/[sessionId]`
 - Back navigation via breadcrumbs
 
 ### 5.3 Navigation & Information Architecture
 
 **Sidebar navigation**:
-- 7 views listed vertically: Executive Overview, Adoption & Usage, Delivery Impact, Cost & Budgets, Quality & Security, Operations, Session Deep-Dive (recent sessions list)
+- 6 primary views listed vertically: Executive Overview, Adoption & Usage, Delivery Impact, Cost & Budgets, Quality & Security, Operations
 - Settings link at bottom
+- Session Deep-Dive is **not in the sidebar** — reached only via drill-down from session rows in other views
 - Collapsible on mobile (hamburger menu)
 
 **Breadcrumbs**:
@@ -404,7 +405,9 @@ Validated across competitors: Copilot (adoption → engagement → acceptance �
 
 ### Endpoints
 
-Analytics API serves the Dashboard UI with data from ClickHouse (as defined in [c4-container.md](../architecture/c4-container.md), container 13).
+#### Analytics API (direct)
+
+Dashboard UI communicates directly with Analytics API for analytics data from ClickHouse (as defined in [c4-container.md](../architecture/c4-container.md), container 13).
 
 | Endpoint | Description |
 |----------|-------------|
@@ -417,7 +420,14 @@ Analytics API serves the Dashboard UI with data from ClickHouse (as defined in [
 | `GET /v1/analytics/sessions/:id` | Session deep-dive: reasoning timeline, diffs, step trace, cost |
 | `GET /v1/analytics/notifications` | Unread notifications: budget alerts, SLA breaches, policy violations |
 | `PATCH /v1/analytics/notifications/:id` | Mark notification as read or dismiss |
-| `GET /v1/user/profile` | Current user profile: name, email, avatar, role, org, teams |
+
+#### Platform API (via API Gateway)
+
+Profile and settings endpoints are served by the API Gateway, which routes to the Identity & Access Service. Dashboard UI uses the same API Gateway path as Web App UI for user management.
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /v1/user/profile` | Current user profile: name, email, avatar, role, org, teams. Aggregated from JWT claims + Identity & Access Service + Tenant Mgmt. |
 | `PATCH /v1/user/profile` | Update editable profile fields (avatar at P0) |
 | `GET /v1/user/settings` | User preferences: theme, timezone, defaults, digest config |
 | `PATCH /v1/user/settings` | Update user preferences |
@@ -433,6 +443,7 @@ Analytics API serves the Dashboard UI with data from ClickHouse (as defined in [
 | `granularity` | enum | `hourly` / `daily` / `weekly` / `monthly` |
 | `model` | string | Filter by LLM model |
 | `task_type` | enum | `bugfix` / `feature` / `refactor` / `test` / `ops` |
+| `language` | string | Filter by programming language |
 | `format` | enum | `json` (default) / `csv` / `ndjson` |
 
 ### Pagination & Auth
@@ -599,12 +610,7 @@ Accessible from user avatar/menu in the dashboard header. Profile identity data 
 
 ### Profile & Settings API Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `GET /v1/user/profile` | GET | Current user profile: name, email, avatar, role, org, teams. Composed from JWT claims + Identity & Access Service + Tenant Mgmt. |
-| `PATCH /v1/user/profile` | PATCH | Update editable profile fields (avatar only at P0) |
-| `GET /v1/user/settings` | GET | User preferences: theme, timezone, default view, date range, digest config |
-| `PATCH /v1/user/settings` | PATCH | Update user preferences |
+Served via **API Gateway → Identity & Access Service** (not Analytics API). See section 12 "Platform API" for endpoint details.
 
 Auth: JWT required. Users can only access/modify their own profile and settings.
 
@@ -614,7 +620,7 @@ Auth: JWT required. Users can only access/modify their own profile and settings.
 |---------|---------|---------|---------|
 | **Theme** | Light / Dark | System preference (`prefers-color-scheme`) | `localStorage` + user profile API (synced) |
 | **Timezone** | IANA timezone selector | Browser timezone (`Intl.DateTimeFormat`) | User profile API |
-| **Default view** | Any of 7 views | Role-based (Executive Overview for VP, Adoption for Eng Manager) | User profile API |
+| **Default view** | Any of 6 primary views | Role-based (Executive Overview for VP, Adoption for Eng Manager) | User profile API |
 | **Default date range** | Per view | View defaults (see section 5.4) | User profile API |
 | **Email digest** | Frequency (weekly / disabled), scope (org / team) | Disabled | User profile API |
 | **Language** | English | English (P0) | User profile API |
@@ -639,6 +645,15 @@ Auth: JWT required. Users can only access/modify their own profile and settings.
 | E2E testing | Playwright |
 | API contracts | OpenAPI 3.1 → `openapi-typescript` → Zod → MSW |
 | i18n | `next-intl` |
+| Architecture methodology | Feature-Sliced Design (FSD) — layers: shared → entities → features → widgets → pages → app. Unidirectional imports. |
+
+### Architecture Methodology: Feature-Sliced Design (FSD)
+
+Dashboard UI is organized following [Feature-Sliced Design (FSD)](https://feature-sliced.design/): `shared → entities → features → widgets → pages → app`. Each layer imports only from lower layers (strict unidirectional dependency graph).
+
+Next.js `app/` directory contains only routing (thin `page.tsx` wrappers). FSD layers live in `src/`. This separation keeps routing concerns in `app/` and domain/business logic in `src/` with predictable slice-level isolation for testing.
+
+Full file structure and component mapping — see [C4 Component Diagram](../architecture/c4-component-dashboard-ui.md).
 
 ### Data Fetching Strategy
 

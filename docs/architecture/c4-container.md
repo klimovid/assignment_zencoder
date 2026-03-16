@@ -36,8 +36,8 @@ C4Container
     Container_Boundary(analytics_plane, "Analytics Plane (Pooled, Tenant-Isolated at Data)") {
         Container(stream, "Stream Processor", "Flink / Benthos", "Event enrichment, sessionization, pre-aggregation into rollups")
         Container(olap, "OLAP Store", "ClickHouse", "Materialized views, Row-Level Security per tenant, 12-24 month retention")
-        Container(analyticsapi, "Analytics API", "Go, REST + GraphQL", "Dashboard queries, cohort threshold ≥5, CSV/NDJSON/OTEL export")
-        Container(dashboard, "Dashboard UI", "React / Next.js", "7 views: Executive, Adoption, Delivery, Cost, Quality, Ops, Session Deep-Dive")
+        Container(analyticsapi, "Analytics API", "Go, REST", "Dashboard queries, cohort threshold ≥5, CSV/NDJSON/OTEL export")
+        Container(dashboard, "Dashboard UI", "React / Next.js", "6 views + Session Deep-Dive (drill-down): Executive, Adoption, Delivery, Cost, Quality, Ops")
         Container(export, "Customer Data Export", "Go worker", "Scheduled/on-demand export to customer S3/GCS, OTEL push (enterprise)")
     }
 
@@ -63,6 +63,7 @@ C4Container
 
     Rel(webapp, apigw, "All requests", "HTTPS / WebSocket")
     Rel(dashboard, analyticsapi, "Dashboard queries", "HTTPS")
+    Rel(dashboard, apigw, "User profile, settings", "HTTPS")
     Rel(apigw, identity, "Authentication", "gRPC")
     Rel(apigw, tenant, "Tenant context", "gRPC")
     Rel(apigw, orchestrator, "Task CRUD, feedback", "gRPC")
@@ -317,7 +318,7 @@ The platform uses a **Bridge tenancy model** (validated pattern, R=0.9):
 
 | | |
 |-|-|
-| **Technology** | Go, REST + GraphQL |
+| **Technology** | Go, REST |
 | **Responsibility** | Serves dashboard queries from ClickHouse, enforces tenant isolation (RLS), applies privacy rules, CSV/NDJSON/OTEL export |
 
 **Key endpoints**:
@@ -331,8 +332,10 @@ The platform uses a **Bridge tenancy model** (validated pattern, R=0.9):
 | `GET /v1/analytics/quality` | CI pass rate, review outcomes, policy violations |
 | `GET /v1/analytics/operations` | Queue depth, failure categories, SLA |
 | `GET /v1/analytics/sessions/:id` | Session deep-dive: reasoning timeline, diffs, step trace |
+| `GET /v1/analytics/notifications` | Unread notifications: budget alerts, SLA breaches, policy violations |
+| `PATCH /v1/analytics/notifications/:id` | Mark notification as read or dismiss |
 
-**Query parameters**: `org_id` (mandatory, from JWT), `team_id[]`, `repo_id[]`, `time_range`, `granularity` (hourly/daily/weekly/monthly), `model`, `task_type`, `format` (json/csv/ndjson).
+**Query parameters**: `org_id` (mandatory, from JWT), `team_id[]`, `repo_id[]`, `time_range`, `granularity` (hourly/daily/weekly/monthly), `model`, `task_type`, `language`, `format` (json/csv/ndjson).
 
 **Privacy enforcement**:
 - Cohort threshold ≥ 5 members for team breakdowns (Copilot precedent)
@@ -347,20 +350,20 @@ The platform uses a **Bridge tenancy model** (validated pattern, R=0.9):
 
 | | |
 |-|-|
-| **Technology** | React / Next.js (App Router), Tailwind CSS, MobX, Recharts. Shared design system with Web App UI |
+| **Technology** | React / Next.js (App Router), Tailwind CSS, MobX (UI state) + TanStack Query (server state), Recharts. Shared design system with Web App UI |
 | **Responsibility** | Analytics visualization for all personas |
 
 **Views**:
 
 | # | View | Target Users | Content |
 |---|------|-------------|---------|
-| 1 | **Executive Overview** | VP Eng, CTO | Adoption trends, accepted outcomes, unit cost, risk posture, deltas 7/30/90d |
-| 2 | **Adoption & Usage** | Eng Manager | DAU/WAU/MAU, sessions, tasks by team/repo/type, rollout tracking |
-| 3 | **Delivery Impact** | Eng Manager, VP | PR throughput, TTM, completion cycles, agent vs non-agent comparison |
-| 4 | **Cost & Budgets** | FinOps, Admin | Spend by team/repo/model/type, forecasts, budget alerts |
-| 5 | **Quality & Security** | Security, Admin | CI/review outcomes, policy violations, audit trail |
-| 6 | **Operations** | Platform Eng | Queue/SLA, failure reasons, runtime distributions |
-| 7 | **Session Deep-Dive** | Eng Manager, Dev | Agent reasoning timeline, diff views, step trace |
+| 1 | **Executive Overview** | VP/CTO, Eng Mgr, FinOps | Adoption trends, accepted outcomes, unit cost, risk posture, deltas 7/30/90d |
+| 2 | **Adoption & Usage** | VP/CTO, Eng Mgr, Platform Eng, IC Dev (own team) | DAU/WAU/MAU, sessions, tasks by team/repo/type, rollout tracking |
+| 3 | **Delivery Impact** | VP/CTO, Eng Mgr, Platform Eng, IC Dev (own team) | PR throughput, TTM, completion cycles, agent vs non-agent comparison |
+| 4 | **Cost & Budgets** | VP/CTO, Eng Mgr, FinOps | Spend by team/repo/model/type, forecasts, budget alerts |
+| 5 | **Quality & Security** | Eng Mgr, Security | CI/review outcomes, policy violations, audit trail |
+| 6 | **Operations** | Eng Mgr, Platform Eng | Queue/SLA, failure reasons, runtime distributions |
+| 7 | **Session Deep-Dive** | Eng Mgr, Platform Eng, Security (audit), IC Dev (own sessions) | Agent reasoning timeline, diff views, step trace. Not in sidebar — sub-page via drill-down. |
 
 **UX principles**:
 - **Progressive disclosure**: Summary → Team → Repo → Session → Object
@@ -451,7 +454,8 @@ The platform uses a **Bridge tenancy model** (validated pattern, R=0.9):
 | From | To | Protocol | Data Flow |
 |------|----|----------|-----------|
 | Web App UI | API Gateway | HTTPS / WebSocket | All user interactions, real-time session updates |
-| Dashboard UI | Analytics API | HTTPS (REST/GraphQL) | Dashboard queries, filter/slice requests, export triggers |
+| Dashboard UI | Analytics API | HTTPS (REST) | Dashboard queries, filter/slice requests, export triggers |
+| Dashboard UI | API Gateway | HTTPS | User profile and settings (`/v1/user/profile`, `/v1/user/settings`) |
 | API Gateway | Identity & Access Service | gRPC | JWT validation, permission checks |
 | API Gateway | Tenant & Org Management | gRPC | Tenant context resolution, policy lookup |
 | API Gateway | Task Orchestrator | gRPC | Task CRUD, status queries, feedback signals |
@@ -511,7 +515,7 @@ All containers emit events → Event Bus (Kafka topics)
       - Materialized views auto-refresh
       - Row-Level Security per org_id
   → Analytics API:
-      - REST/GraphQL queries with tenant isolation
+      - REST queries with tenant isolation
       - Cohort threshold enforcement (≥5)
       - Redis caching by freshness tiers
   → Dashboard UI (charts, tables, KPI tiles)
@@ -553,12 +557,14 @@ All containers emit audit events → Event Bus (Kafka, dedicated audit topic)
 |----------|-----------|-----------|
 | **Framework** | React + Next.js (App Router) | SSR/SSG for performance, shared with Web App UI |
 | **Styling** | Tailwind CSS | Utility-first, consistent design system, rapid iteration |
-| **State management** | MobX | Observable-based reactivity, well-suited for dashboard data stores |
+| **State management** | MobX (UI state) + TanStack Query (server state + cache) | MobX for observable UI state (filters, theme); TanStack Query for server cache (deduplication, background refetch, stale-while-revalidate) |
 | **Charts** | Recharts | Declarative React API, lightweight, covers standard dashboard charts (line, bar, area, pie) |
 | **Testing (unit/integration)** | Jest + React Testing Library | Component-level testing with user-centric assertions |
 | **Testing (E2E)** | Playwright | Cross-browser E2E, reliable for dashboard interaction flows |
 | **API contracts** | OpenAPI 3.1 spec → `openapi-typescript` (codegen) + Zod (runtime validation) | Type safety from API spec to component; catches contract drift at build time |
 | **API mocking (tests)** | MSW (Mock Service Worker) | Intercepts network requests in tests using handlers generated from OpenAPI spec |
+| **i18n** | `next-intl` | Internationalization framework for Next.js; EN only at P0, architecture supports adding languages |
+| **Architecture methodology** | Feature-Sliced Design (FSD) | Layers: shared → entities → features → widgets → pages → app. Unidirectional imports. Enables slice-level isolation for testing. |
 
 **Contract validation flow**:
 
