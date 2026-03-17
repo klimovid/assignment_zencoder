@@ -3,3 +3,4 @@
 
 # MCP config (contains API keys)
 .mcp.json
+node_modules
