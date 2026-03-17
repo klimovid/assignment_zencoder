@@ -1,44 +1,89 @@
-# assignment_zencoder
+# Cloud Agent Execution Platform — Dashboard UI
 
+Analytics dashboard for monitoring AI coding agents. Built with Next.js, Feature-Sliced Design, and Shadcn UI.
 
+## Tech Stack
 
-Ка кделалось задание
-1. ОБсудили с Клодом как мы понимаем задачу/что требуется/ какие критерии
-2. Обсудили как мы ее будем делать в соответствии с предложенными подходами:
-3. рисерч подобных систем
-3.1 сгенерирован промпт для рисерча архитектуры и продукта
-3.2 рисерч архитектуры через gemini
-3.3 рисерч архитектуры через openai
-3.4 рисерч архитектуры через claude + summary
+- **Framework**: Next.js 16 (App Router, Turbopack), React 19, TypeScript
+- **Architecture**: Feature-Sliced Design (FSD) — 6 layers
+- **UI**: Tailwind CSS v4, Shadcn UI, Recharts, Lucide icons
+- **State**: MobX (client state), TanStack Query v5 (server state)
+- **Validation**: Zod
+- **Testing**: Jest, Playwright, MSW, Faker.js, jest-axe
+- **Auth**: JWT (jose), mock IdP
 
-4. Генерация c4 system context
+## Project Structure
 
-5. Промпт для рисерча дашборда
-5.1 рисерч дашборда через gemini
-5.2 рисерч дашборда через openai
-5.3 рисерч дашборда через claude + summary
+```
+src/
+  shared/       → UI kit, API client, utilities, config
+  entities/     → Business entities (session, metric, notification, team, user)
+  features/     → Capabilities (auth, filters, theme, export)
+  widgets/      → Composite blocks (shell, sidebar, tables, timeline)
+  views/        → Page compositions (overview, adoption, delivery, cost, ...)
+  app/          → Providers, middleware, global config
 
-6. Генерация c4 container diagram вся платформа, с учётом результатов research с акцентом на dashboard
-7. Cоздания prd для дашборда на основе research + архитектуры
-8. Генерация Component diagram — zoom в dashboard container
-9. Генерация интерфейса через Figma Make на основе prd
-10. проверка всех документов на consistency
-11. генерация Technical implementation spec на основе prd
-12. расширение Technical implementation о тестировании ( секция 11 )
-13. ~~Создание плана имплементации~~ ✅ → [`docs/specs/dashboard-implementation-plan.md`](docs/specs/dashboard-implementation-plan.md)
-14. Имплементация
-15. Создание mock-сервера
-16. Деплой на vercel dashboard и mock-сервера
-17. Конец
+app/            → Next.js routes (App Router)
+  dashboard/    → All dashboard routes
+  api/mock/     → Mock API (Route Handlers + Faker.js)
+  api/auth/     → Auth mock routes
 
+docs/
+  architecture/ → C4 diagrams (system, container, component)
+  prd/          → Product requirements
+  specs/        → Technical spec, implementation plan
+  researches/   → Architecture & dashboard research (Gemini, OpenAI, Claude)
+```
 
-Approaches
-0. deep проработка врхитектуры через C4 модель. от этого шага сильно зависит успех one-shot промптинга
-1. использовать клод для генерации промптов
-2. Human in the loop / validation
-3. use fpf skill for complex tasks of different types
-4. use planing mode as step 0 for complex tasks
-5. use proper skills and mcp's
-6. use figma for ui generation
-7. spec-driven development
-8. ask claude to recheck itself
+## Getting Started
+
+```bash
+yarn install
+yarn dev          # http://localhost:3000
+yarn build        # production build
+yarn lint         # ESLint + FSD boundary rules
+yarn test         # Jest (unit/integration)
+yarn test:e2e     # Playwright (E2E)
+```
+
+## How This Project Was Built
+
+Spec-driven development with human-in-the-loop validation at every step:
+
+| # | Step | Status |
+|---|------|--------|
+| 1 | Define task understanding, requirements, and criteria with Claude | Done |
+| 2 | Agree on approaches and methodology | Done |
+| 3 | Research similar systems (architecture & product) | Done |
+| 3.1 | Generate research prompt for architecture | Done |
+| 3.2 | Architecture research via Gemini | Done |
+| 3.3 | Architecture research via OpenAI Deep Research | Done |
+| 3.4 | Architecture research via Claude + synthesis summary | Done |
+| 4 | Generate C4 System Context diagram | Done |
+| 5 | Generate research prompt for dashboard | Done |
+| 5.1 | Dashboard research via Gemini | Done |
+| 5.2 | Dashboard research via OpenAI Deep Research | Done |
+| 5.3 | Dashboard research via Claude + synthesis summary | Done |
+| 6 | Generate C4 Container diagram (full platform, dashboard focus) | Done |
+| 7 | Create Dashboard PRD from research + architecture | Done |
+| 8 | Generate C4 Component diagram (zoom into Dashboard container) | Done |
+| 9 | Generate UI designs via Stitch (Figma Make) from PRD | Done |
+| 10 | Cross-check all documents for consistency | Done |
+| 11 | Generate Technical Implementation Spec from PRD | Done |
+| 12 | Extend Technical Spec with testing strategy (section 11) | Done |
+| 13 | Create implementation plan | Done |
+| 14 | Implementation | **In Progress** |
+| 15 | Build mock API server | Pending |
+| 16 | Deploy dashboard + mock server to Vercel | Pending |
+
+## Approaches
+
+0. **Deep architecture via C4 Model** — success of one-shot prompting heavily depends on this step
+1. **Claude for prompt generation** — use AI to generate research and implementation prompts
+2. **Human in the loop** — validation at every step
+3. **First Principles Framework** — structured reasoning for complex tasks
+4. **Planning mode first** — plan before implementing complex tasks
+5. **Proper skills and MCPs** — leverage specialized tools (Context7, Playwright, Stitch)
+6. **Stitch for UI generation** — design screens from PRD
+7. **Spec-driven development** — specs define the contract, code follows
+8. **Self-verification** — ask Claude to recheck its own output

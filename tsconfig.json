@@ -18,8 +18,15 @@
         "name": "next"
       }
     ],
+    "noUncheckedIndexedAccess": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@shared/*": ["./src/shared/*"],
+      "@entities/*": ["./src/entities/*"],
+      "@features/*": ["./src/features/*"],
+      "@widgets/*": ["./src/widgets/*"],
+      "@pages/*": ["./src/views/*"],
+      "@app/*": ["./src/app/*"]
     }
   },
   "include": [
