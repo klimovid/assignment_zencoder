@@ -1,7 +1,25 @@
-# Cloud Agent Execution Platform — Dashboard UI
+<p align="center">
+  <h1 align="center">Cloud Agent Execution Platform — Dashboard UI</h1>
+  <p align="center">
+    Analytics dashboard for monitoring AI coding agents.<br/>
+    Built with Next.js, Feature-Sliced Design, and Shadcn UI.
+  </p>
+</p>
 
-> Analytics dashboard for monitoring AI coding agents.
-> Built with Next.js, Feature-Sliced Design, and Shadcn UI.
+<p align="center">
+  <a href="https://assignment-zencoder.vercel.app/auth"><img src="https://img.shields.io/badge/Live_Demo-▶_Vercel-black?style=for-the-badge&logo=vercel" alt="Live Demo" /></a>
+  <a href="docs/architecture/"><img src="https://img.shields.io/badge/Architecture-C4_Diagrams-blue?style=for-the-badge" alt="Architecture" /></a>
+  <a href="docs/prd/dashboard-prd.md"><img src="https://img.shields.io/badge/PRD-Dashboard-green?style=for-the-badge" alt="PRD" /></a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react" alt="React" />
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Tailwind-v4-06B6D4?logo=tailwindcss&logoColor=white" alt="Tailwind" />
+  <img src="https://img.shields.io/badge/MobX-6-FF9955?logo=mobx&logoColor=white" alt="MobX" />
+  <img src="https://img.shields.io/badge/Playwright-E2E-2EAD33?logo=playwright&logoColor=white" alt="Playwright" />
+</p>
 
 ---
 
@@ -56,32 +74,31 @@ Spec-driven development with human-in-the-loop validation at every step:
 
 ## Insights
 
-### What worked well
+<table>
+<tr><th width="50%">What worked well</th><th width="50%">What didn't work</th></tr>
+<tr>
+<td>
 
-1. **C4 + specs enable one-shot implementation.** Spend time on diagrams and specs upfront — the agent builds it right on the first try.
+**C4 + specs enable one-shot implementation.** Spend time on diagrams and specs upfront — the agent builds it right on the first try.
 
-2. **FSD is great for TDD.** Clean layer boundaries (like Clean Architecture but for frontend) make writing tests first easy.
+**FSD is great for TDD.** Clean layer boundaries (like Clean Architecture but for frontend) make writing tests first easy.
 
-3. **MobX is great for TDD.** Plain classes, no mocking needed — just create a store, call methods, check state.
+**MobX is great for TDD.** Plain classes, no mocking needed — just create a store, call methods, check state.
 
-### What didn't work
+</td>
+<td>
 
-1. **Lost visual fidelity.** [Figma Make design](https://www.figma.com/make/db6k49YyR1nbP0Bw0aEpqP/Create-UI-Dashboard?t=AhSbs6JJWP6oeMmS-1) looked good, but export tokens ran out. Switched to [Google Stitch design](https://stitch.withgoogle.com/projects/8562584486654646230) — still an experimental product with a very immature MCP server, which led to losing design quality in the final output.
+**Lost visual fidelity.** [Figma Make design](https://www.figma.com/make/db6k49YyR1nbP0Bw0aEpqP/Create-UI-Dashboard?t=AhSbs6JJWP6oeMmS-1) looked good, but export tokens ran out. Switched to [Google Stitch design](https://stitch.withgoogle.com/projects/8562584486654646230) — still an experimental product with a very immature MCP server, which led to losing design quality in the final output.
 
-2. **Auth page was lost.** PRD said "no login page". Why? It causes some problems with RBAC.
+**Auth page was lost.** PRD said "no login page". Why? It causes some problems with RBAC.
 
-3. **Charts got lost.** Should have matched PRD against designs before planning. The API has chart data, but nobody built the charts.
+**Charts got lost.** Should have matched PRD against designs before planning. The API has chart data, but nobody built the charts.
 
-4. **Mermaid is unreadable for humans.** LLMs love it, people can't read it. Switched to draw.io.
+**Mermaid is unreadable for humans.** LLMs love it, people can't read it. Switched to draw.io.
 
----
-
-## How and Where to Check
-
-| What | Where |
-|:-----|:------|
-| Architecture diagrams | [`docs/architecture/`](docs/architecture/) — C4 System Context, Container, and Component diagrams (draw.io + SVG exports) |
-| Live demo | Deployed on Vercel: https://assignment-zencoder.vercel.app/auth |
+</td>
+</tr>
+</table>
 
 ---
 
