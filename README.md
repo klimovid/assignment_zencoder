@@ -54,14 +54,13 @@ Spec-driven development with human-in-the-loop validation at every step:
 | 6 | Generate C4 Container diagram (full platform, dashboard focus) |
 | 7 | Create Dashboard PRD from research + architecture |
 | 8 | Generate C4 Component diagram (zoom into Dashboard container) |
-| 9 | Generate UI designs via Stitch (Figma Make) from PRD |
+| 9 | Generate UI designs via Google Stitch from PRD |
 | 10 | Cross-check all documents for consistency |
 | 11 | Generate Technical Implementation Spec from PRD |
-| 12 | Extend Technical Spec with testing strategy (section 11) |
-| 13 | Create implementation plan |
-| 14 | Implementation |
-| 15 | Build mock API server |
-| 16 | Deploy dashboard + mock server to Vercel |
+| 12 | Create implementation plan (TDD) |
+| 13 | Implementation |
+| 14 | Build mock API server |
+| 15 | Deploy dashboard + mock server to Vercel |
 
 ---
 
