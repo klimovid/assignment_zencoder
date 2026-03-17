@@ -28,6 +28,7 @@ const config: Config = {
     "!src/**/*.d.ts",
     "!src/**/*.stories.{ts,tsx}",
     "!src/**/index.ts",
+    "!src/shared/ui/*.tsx",
   ],
 };
 
