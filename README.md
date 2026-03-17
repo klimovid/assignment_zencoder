@@ -23,7 +23,17 @@
 
 ---
 
-## How This Project Was Built
+## 🔗 How and Where to Check
+
+| What | Where |
+|:-----|:------|
+| Architecture diagrams | [`docs/architecture/`](docs/architecture/) — C4 System Context, Container, and Component diagrams (draw.io + SVG exports) |
+| Live demo | Deployed on Vercel: https://assignment-zencoder.vercel.app/auth |
+
+---
+
+
+## 🏗️ How This Project Was Built
 
 Spec-driven development with human-in-the-loop validation at every step:
 
@@ -55,7 +65,7 @@ Spec-driven development with human-in-the-loop validation at every step:
 
 ---
 
-## Approaches
+## 🧭 Approaches
 
 | # | Approach | Details |
 |:--|:---------|:--------|
@@ -72,7 +82,7 @@ Spec-driven development with human-in-the-loop validation at every step:
 
 ---
 
-## Insights
+## 💡 Insights
 
 <table>
 <tr><th width="50%">What worked well</th><th width="50%">What didn't work</th></tr>
@@ -102,7 +112,7 @@ Spec-driven development with human-in-the-loop validation at every step:
 
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 | Category | Technologies |
 |:---------|:-------------|
@@ -116,7 +126,7 @@ Spec-driven development with human-in-the-loop validation at every step:
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 src/
@@ -141,7 +151,7 @@ docs/
 
 ---
 
-## Getting Started
+## 🚀 Getting Started
 
 ```bash
 yarn install
