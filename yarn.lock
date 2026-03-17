@@ -2849,6 +2849,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/react-window@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "@types/react-window@npm:2.0.0"
+  dependencies:
+    react-window: "npm:*"
+  checksum: 10c0/4de05bf54c3947a68878f1ddcc019db27811d2390aae2e4eb1ab83bff134d6a2f20318555e06b891234df946528470d7c01e43dff759209ec75c54cbda034acf
+  languageName: node
+  linkType: hard
+
 "@types/react@npm:^19":
   version: 19.2.14
   resolution: "@types/react@npm:19.2.14"
@@ -4267,6 +4276,7 @@ __metadata:
     "@types/node": "npm:^20"
     "@types/react": "npm:^19"
     "@types/react-dom": "npm:^19"
+    "@types/react-window": "npm:^2.0.0"
     class-variance-authority: "npm:^0.7.1"
     clsx: "npm:^2.1.1"
     eslint: "npm:^9"
@@ -4285,6 +4295,7 @@ __metadata:
     react: "npm:19.2.3"
     react-diff-view: "npm:^3.3.2"
     react-dom: "npm:19.2.3"
+    react-window: "npm:^2.2.7"
     recharts: "npm:^3.8.0"
     shadcn: "npm:^4.0.8"
     shiki: "npm:^4.0.2"
@@ -9007,6 +9018,16 @@ __metadata:
     redux:
       optional: true
   checksum: 10c0/00d485f9d9219ca1507b4d30dde5f6ff8fb68ba642458f742e0ec83af052f89e65cd668249b99299e1053cc6ad3d2d8ac6cb89e2f70d2ac5585ae0d7fa0ef259
+  languageName: node
+  linkType: hard
+
+"react-window@npm:*, react-window@npm:^2.2.7":
+  version: 2.2.7
+  resolution: "react-window@npm:2.2.7"
+  peerDependencies:
+    react: ^18.0.0 || ^19.0.0
+    react-dom: ^18.0.0 || ^19.0.0
+  checksum: 10c0/4eba3bce2083fa53ac674513078fb23d4dc3ad7dfd12ea5733863b583ea1472294df791947a2b58f27bab45138cedf7a63fdc19b0420823bf19749aa10455b81
   languageName: node
   linkType: hard
 

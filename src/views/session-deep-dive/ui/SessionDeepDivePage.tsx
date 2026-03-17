@@ -1,11 +1,20 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Badge } from "@shared/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@shared/ui/card";
 import { Skeleton } from "@shared/ui/skeleton";
-import { SessionTimeline } from "@widgets/session-timeline/ui/SessionTimeline";
-import { CostBreakdown } from "@widgets/cost-breakdown/ui/CostBreakdown";
 import type { Session } from "@entities/session/model/types";
+
+const SessionTimeline = dynamic(
+  () => import("@widgets/session-timeline/ui/SessionTimeline").then((m) => ({ default: m.SessionTimeline })),
+  { loading: () => <Skeleton className="h-40 rounded-xl" /> },
+);
+
+const CostBreakdown = dynamic(
+  () => import("@widgets/cost-breakdown/ui/CostBreakdown").then((m) => ({ default: m.CostBreakdown })),
+  { loading: () => <Skeleton className="h-32 rounded-xl" /> },
+);
 
 interface SessionDeepDivePageProps {
   session: Session | null;

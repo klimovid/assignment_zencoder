@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import { User, Settings, LogOut, ExternalLink } from "lucide-react";
 import { Button } from "@shared/ui/button";
 
@@ -43,10 +44,13 @@ export function UserMenu({ user, onLogout, onNavigateSettings }: UserMenuProps) 
         aria-haspopup="menu"
       >
         {user.avatarUrl ? (
-          <img
+          <Image
             src={user.avatarUrl}
             alt={user.name}
-            className="size-6 rounded-full"
+            width={24}
+            height={24}
+            className="rounded-full"
+            unoptimized
           />
         ) : (
           <User className="size-4" />

@@ -13,6 +13,8 @@ const config: Config = {
     "^@pages/(.*)$": "<rootDir>/src/views/$1",
     "^@app/(.*)$": "<rootDir>/src/app/$1",
     "^@/(.*)$": "<rootDir>/src/$1",
+    "^next/image$": "<rootDir>/src/shared/__mocks__/next-image.tsx",
+    "^next/dynamic$": "<rootDir>/src/shared/__mocks__/next-dynamic.tsx",
   },
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   transform: {
