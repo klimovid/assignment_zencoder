@@ -7,9 +7,9 @@ test.describe("Adoption & Usage", () => {
 
   // AD-2: Filters present
   test("renders DAU/WAU/MAU KPIs", async ({ page }) => {
-    await expect(page.getByText("DAU")).toBeVisible();
-    await expect(page.getByText("WAU")).toBeVisible();
-    await expect(page.getByText("MAU")).toBeVisible();
+    await expect(page.getByText("DAU", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("WAU", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("MAU", { exact: true }).first()).toBeVisible();
   });
 
   // AD-1: Task funnel

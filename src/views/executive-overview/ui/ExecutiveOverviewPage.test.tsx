@@ -22,25 +22,25 @@ describe("ExecutiveOverviewPage", () => {
 
   // OV-2: Delta indicators on each KPI
   it("shows delta indicators on each KPI card", () => {
-    const data = createOverviewResponse({
-      data: {
-        active_users: { current: 100, previous: 90, delta_percent: 11.1 },
-        sessions_total: { current: 500, previous: 400, delta_percent: 25.0 },
-        accepted_outcome_rate: { current: 95.2, previous: 90.0, delta_percent: 5.8 },
-        cost_per_task: { current: 1.5, previous: 2.0, delta_percent: -25.0 },
-        ci_pass_rate: { current: 97.0, previous: 95.0, delta_percent: 2.1 },
-      },
-    });
-    render(<ExecutiveOverviewPage data={data} />);
+    renderPage();
     // Check delta indicators are rendered (aria-labels with % values)
     const deltas = screen.getAllByText(/%$/);
     expect(deltas.length).toBeGreaterThanOrEqual(5);
   });
 
-  // OV-6: No individual breakdown — executive level only
-  it("does not render drill-down tables", () => {
+  it("renders adoption trends chart", () => {
     renderPage();
-    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Adoption Trends" })).toBeInTheDocument();
+  });
+
+  it("renders outcome vs cost chart", () => {
+    renderPage();
+    expect(screen.getByRole("img", { name: "Outcome vs. Cost" })).toBeInTheDocument();
+  });
+
+  it("renders risk & compliance alerts table", () => {
+    renderPage();
+    expect(screen.getByText("Risk & Compliance Alerts")).toBeInTheDocument();
   });
 
   it("renders loading state", () => {

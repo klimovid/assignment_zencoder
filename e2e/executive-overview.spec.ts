@@ -18,7 +18,7 @@ test.describe("Executive Overview", () => {
     await expect(page.getByRole("heading", { name: "Executive Overview" })).toBeVisible();
   });
 
-  test("does not show drill-down tables", async ({ page }) => {
-    await expect(page.getByRole("table")).not.toBeVisible();
+  test("renders risk & compliance alerts table", async ({ page }) => {
+    await expect(page.getByText("Risk & Compliance Alerts")).toBeVisible();
   });
 });

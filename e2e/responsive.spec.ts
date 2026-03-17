@@ -1,10 +1,13 @@
 import { test, expect, devices } from "@playwright/test";
 
+const authFile = "e2e/.auth/user.json";
+
 test.describe("Responsive", () => {
   // CC-7: Mobile sidebar
   test("mobile shows hamburger menu", async ({ browser }) => {
     const context = await browser.newContext({
       ...devices["iPhone 13"],
+      storageState: authFile,
     });
     const page = await context.newPage();
     await page.goto("/dashboard");

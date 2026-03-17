@@ -7,7 +7,7 @@ test.describe("Operations", () => {
 
   // OP-1: Queue depth
   test("renders queue depth", async ({ page }) => {
-    await expect(page.getByText("Queue Depth")).toBeVisible();
+    await expect(page.getByText("Queue Depth", { exact: true })).toBeVisible();
   });
 
   // OP-2: Failure rate

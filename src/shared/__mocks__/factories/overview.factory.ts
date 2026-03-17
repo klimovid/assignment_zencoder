@@ -31,6 +31,40 @@ export function createOverviewResponse(
         ...createKPIValue(),
         current: faker.number.float({ min: 80, max: 99, fractionDigits: 1 }),
       },
+      adoption_trend: Array.from({ length: faker.number.int({ min: 7, max: 30 }) }, (_, i) => {
+        const date = new Date();
+        date.setDate(date.getDate() - (30 - i));
+        return {
+          date: date.toISOString().split("T")[0]!,
+          active_users: faker.number.int({ min: 50, max: 500 }),
+        };
+      }),
+      outcome_vs_cost: Array.from({ length: 4 }, (_, i) => ({
+        week: `Week ${i + 1}`,
+        outcomes: faker.number.int({ min: 100, max: 500 }),
+        total_spend: faker.number.float({ min: 1000, max: 10000, fractionDigits: 2 }),
+      })),
+      risk_alerts: Array.from({ length: faker.number.int({ min: 2, max: 5 }) }, () => ({
+        id: faker.string.uuid(),
+        violation_type: faker.helpers.arrayElement([
+          "Unencrypted Secret in Suggestion",
+          "Restricted Dependency Usage",
+          "Excessive Token Consumption",
+          "License Violation",
+          "Large File Commit",
+        ]),
+        description: faker.lorem.sentence(),
+        repository: faker.helpers.arrayElement([
+          "core-auth-service",
+          "web-dashboard-ui",
+          "shared-api-utils",
+          "ml-pipeline",
+          "infra-terraform",
+        ]),
+        severity: faker.helpers.arrayElement(["low", "medium", "high", "critical"] as const),
+        status: faker.helpers.arrayElement(["pending_review", "auto_fixed", "dismissed"] as const),
+        detected_at: faker.helpers.arrayElement(["2 hours ago", "14 hours ago", "Yesterday", "3 days ago"]),
+      })),
     },
     meta: {
       time_range: faker.helpers.arrayElement(["7d", "30d", "90d"]),
