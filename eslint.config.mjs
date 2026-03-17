@@ -36,7 +36,7 @@ const eslintConfig = defineConfig([
           rules: [
             { from: "app", allow: ["app", "pages", "widgets", "features", "entities", "shared"] },
             { from: "pages", allow: ["widgets", "features", "entities", "shared"] },
-            { from: "widgets", allow: ["features", "entities", "shared"] },
+            { from: "widgets", allow: ["widgets", "features", "entities", "shared"] },
             { from: "features", allow: ["entities", "shared"] },
             { from: "entities", allow: ["entities", "shared"] },
             { from: "shared", allow: ["shared"] },
