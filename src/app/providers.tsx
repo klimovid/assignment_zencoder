@@ -8,6 +8,7 @@ import { FilterStoreProvider } from "@features/filter-management/model/FilterCon
 import { URLSyncProvider } from "@features/filter-management/lib/URLSyncProvider";
 import { RootStoreProvider } from "./store-context";
 import { createRootStore, RootStore } from "./stores";
+import { AuthInitializer } from "./auth-initializer";
 
 function makeQueryClient() {
   return new QueryClient({
@@ -28,15 +29,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <RootStoreProvider store={rootStore}>
         <AuthStoreProvider store={rootStore.auth}>
-          <FilterStoreProvider store={rootStore.filter}>
-            <ThemeProvider>
-              <Suspense>
-                <URLSyncProvider>
-                  {children}
-                </URLSyncProvider>
-              </Suspense>
-            </ThemeProvider>
-          </FilterStoreProvider>
+          <AuthInitializer>
+            <FilterStoreProvider store={rootStore.filter}>
+              <ThemeProvider>
+                <Suspense>
+                  <URLSyncProvider>
+                    {children}
+                  </URLSyncProvider>
+                </Suspense>
+              </ThemeProvider>
+            </FilterStoreProvider>
+          </AuthInitializer>
         </AuthStoreProvider>
       </RootStoreProvider>
     </QueryClientProvider>

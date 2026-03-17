@@ -129,8 +129,8 @@ describe("SessionTimeline", () => {
       ...mockSession,
       steps: [
         {
-          ...mockSession.steps[0],
-          status: "error",
+          ...mockSession.steps[0]!,
+          status: "error" as const,
         },
       ],
     };

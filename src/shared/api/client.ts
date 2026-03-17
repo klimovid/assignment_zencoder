@@ -22,7 +22,11 @@ export async function apiFetch<T>(
   schema: z.ZodType<T>,
   options: FetchOptions = {},
 ): Promise<T> {
-  const { baseUrl = "", body, ...fetchOptions } = options;
+  const {
+    baseUrl = process.env.NEXT_PUBLIC_ANALYTICS_API_URL ?? "/api/mock",
+    body,
+    ...fetchOptions
+  } = options;
 
   const response = await fetch(`${baseUrl}${path}`, {
     ...fetchOptions,

@@ -69,17 +69,17 @@ describe("DiffViewer", () => {
     render(<DiffViewer files={mockFiles} />);
     const tabs = screen.getAllByRole("tab");
 
-    await userEvent.setup().click(tabs[1]);
-    expect(tabs[1]).toHaveAttribute("aria-selected", "true");
+    await userEvent.setup().click(tabs[1]!);
+    expect(tabs[1]!).toHaveAttribute("aria-selected", "true");
   });
 
   it("shows hunk headers", () => {
-    render(<DiffViewer files={[mockFiles[0]]} />);
+    render(<DiffViewer files={[mockFiles[0]!]} />);
     expect(screen.getAllByText("@@ -10,5 +10,8 @@").length).toBeGreaterThan(0);
   });
 
   it("does not render file tabs for single file", () => {
-    render(<DiffViewer files={[mockFiles[0]]} />);
+    render(<DiffViewer files={[mockFiles[0]!]} />);
     expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
   });
 });

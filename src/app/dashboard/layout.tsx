@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Providers } from "../providers";
 import { AppShell } from "@widgets/app-shell/ui/AppShell";
+import { AuthGuard } from "@features/auth/ui/AuthGuard";
+import { HeaderActions } from "./header-actions";
 
 export const metadata: Metadata = {
   title: "Dashboard — Cloud Agent Platform",
@@ -14,7 +16,9 @@ export default function DashboardLayout({
 }) {
   return (
     <Providers>
-      <AppShell>{children}</AppShell>
+      <AuthGuard>
+        <AppShell headerActions={<HeaderActions />}>{children}</AppShell>
+      </AuthGuard>
     </Providers>
   );
 }

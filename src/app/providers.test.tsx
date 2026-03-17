@@ -20,6 +20,9 @@ jest.mock("@features/filter-management/lib/URLSyncProvider", () => ({
 jest.mock("./store-context", () => ({
   RootStoreProvider: ({ children }: { children: React.ReactNode }) => <div data-testid="root-store-provider">{children}</div>,
 }));
+jest.mock("./auth-initializer", () => ({
+  AuthInitializer: ({ children }: { children: React.ReactNode }) => <div data-testid="auth-initializer">{children}</div>,
+}));
 
 import { Providers } from "./providers";
 

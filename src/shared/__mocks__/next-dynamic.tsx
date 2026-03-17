@@ -5,18 +5,20 @@ type DynamicOptions = {
   ssr?: boolean;
 };
 
-export default function dynamic<T extends React.ComponentType<Record<string, unknown>>>(
-  loader: () => Promise<{ default: T } | T>,
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default function dynamic(
+  loader: () => Promise<{ default: React.ComponentType<any> } | React.ComponentType<any>>,
   _options?: DynamicOptions,
-) {
-  let Component: T | null = null;
+): React.ComponentType<any> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let Component: React.ComponentType<any> | null = null;
 
-  // Eagerly resolve the import for tests
   const promise = loader().then((mod) => {
-    Component = "default" in mod ? (mod as { default: T }).default : (mod as T);
+    Component = "default" in mod ? mod.default : mod;
   });
 
-  function DynamicComponent(props: React.ComponentProps<T>) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function DynamicComponent(props: any) {
     const [, setReady] = React.useState(!!Component);
 
     React.useEffect(() => {
@@ -30,5 +32,5 @@ export default function dynamic<T extends React.ComponentType<Record<string, unk
   }
 
   DynamicComponent.displayName = "DynamicMock";
-  return DynamicComponent as unknown as T;
+  return DynamicComponent;
 }

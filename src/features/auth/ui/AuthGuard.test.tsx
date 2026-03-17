@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import { redirect } from "next/navigation";
 import { AuthGuard } from "./AuthGuard";
 import { AuthStore } from "../model/AuthStore";
 import { AuthStoreProvider } from "../model/AuthContext";
@@ -8,27 +9,32 @@ function renderWithAuth(store: AuthStore, ui: React.ReactElement) {
 }
 
 describe("AuthGuard", () => {
-  it("renders nothing when not initialized", () => {
-    const store = new AuthStore();
-    const { container } = renderWithAuth(
-      store,
-      <AuthGuard>
-        <div>Protected</div>
-      </AuthGuard>,
-    );
-    expect(container).toBeEmptyDOMElement();
+  beforeEach(() => {
+    (redirect as unknown as jest.Mock).mockClear();
   });
 
-  it("renders nothing when not authenticated", () => {
+  it("renders loading skeleton when not initialized", () => {
     const store = new AuthStore();
-    store.initialized = true;
-    const { container } = renderWithAuth(
+    renderWithAuth(
       store,
       <AuthGuard>
         <div>Protected</div>
       </AuthGuard>,
     );
-    expect(container).toBeEmptyDOMElement();
+    expect(screen.getByRole("status", { name: /loading/i })).toBeInTheDocument();
+    expect(screen.queryByText("Protected")).not.toBeInTheDocument();
+  });
+
+  it("redirects to /auth when not authenticated", () => {
+    const store = new AuthStore();
+    store.initialized = true;
+    renderWithAuth(
+      store,
+      <AuthGuard>
+        <div>Protected</div>
+      </AuthGuard>,
+    );
+    expect(redirect).toHaveBeenCalledWith("/auth");
   });
 
   it("renders children when authenticated and no role restriction", () => {

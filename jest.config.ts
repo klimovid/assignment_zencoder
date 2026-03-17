@@ -15,6 +15,7 @@ const config: Config = {
     "^@/(.*)$": "<rootDir>/src/$1",
     "^next/image$": "<rootDir>/src/shared/__mocks__/next-image.tsx",
     "^next/dynamic$": "<rootDir>/src/shared/__mocks__/next-dynamic.tsx",
+    "^next/navigation$": "<rootDir>/src/shared/__mocks__/next-navigation.tsx",
   },
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   transform: {
