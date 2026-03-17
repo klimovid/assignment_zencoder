@@ -1,7 +1,18 @@
 "use client";
 
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@shared/ui/card";
 import { KPICard } from "@entities/metric/ui/KPICard";
+import { ChartContainer } from "@entities/metric/ui/ChartContainer";
+import { CHART_COLORS } from "@shared/lib/chart-colors";
 import type { CostResponse } from "../api/schemas";
 
 interface CostPageProps {
@@ -40,37 +51,43 @@ export function CostPage({ data, loading = false }: CostPageProps) {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Spend by Team</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              {spend_by_team.map((team) => (
-                <li key={team.team_id} className="flex items-center justify-between text-sm">
-                  <span>{team.team_name}</span>
-                  <span className="font-mono">{formatUSD(team.spend_usd)}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        {/* Spend by Team */}
+        <ChartContainer
+          title="Spend by Team"
+          accessibilityData={{
+            headers: ["Team", "Spend (USD)"],
+            rows: spend_by_team.map((t) => [t.team_name, formatUSD(t.spend_usd)]),
+          }}
+        >
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={spend_by_team} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" />
+              <YAxis type="category" dataKey="team_name" width={120} />
+              <Tooltip formatter={(v) => formatUSD(v as number)} />
+              <Bar dataKey="spend_usd" fill={CHART_COLORS[0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartContainer>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Spend by Model</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              {spend_by_model.map((m) => (
-                <li key={m.model} className="flex items-center justify-between text-sm">
-                  <span className="font-mono text-xs">{m.model}</span>
-                  <span className="font-mono">{formatUSD(m.spend_usd)}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        {/* Spend by Model */}
+        <ChartContainer
+          title="Spend by Model"
+          accessibilityData={{
+            headers: ["Model", "Spend (USD)"],
+            rows: spend_by_model.map((m) => [m.model, formatUSD(m.spend_usd)]),
+          }}
+        >
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={spend_by_model} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" />
+              <YAxis type="category" dataKey="model" width={160} />
+              <Tooltip formatter={(v) => formatUSD(v as number)} />
+              <Bar dataKey="spend_usd" fill={CHART_COLORS[1]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartContainer>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

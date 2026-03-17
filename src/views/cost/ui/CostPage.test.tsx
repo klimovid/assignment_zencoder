@@ -43,6 +43,13 @@ describe("CostPage", () => {
     expect(screen.getByText("Cost per Task")).toBeInTheDocument();
   });
 
+  it("renders spend chart containers", () => {
+    const data = createCostResponse();
+    render(<CostPage data={data} />);
+    expect(screen.getByRole("img", { name: "Spend by Team" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Spend by Model" })).toBeInTheDocument();
+  });
+
   it("renders loading state", () => {
     render(<CostPage data={null} loading />);
     const loadingCards = screen.getAllByRole("status");

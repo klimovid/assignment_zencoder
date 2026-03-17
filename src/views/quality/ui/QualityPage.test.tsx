@@ -11,12 +11,11 @@ describe("QualityPage", () => {
     expect(screen.getByText("CI Pass Rate")).toBeInTheDocument();
   });
 
-  // QA-2: Review outcomes
-  it("renders review outcomes", () => {
+  // QA-2: Review outcomes chart
+  it("renders review outcomes donut chart", () => {
     const data = createQualityResponse();
     render(<QualityPage data={data} />);
-    expect(screen.getByText("Review Outcomes")).toBeInTheDocument();
-    expect(screen.getAllByText(/Approved/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole("img", { name: "Review Outcomes" })).toBeInTheDocument();
   });
 
   // QA-3: Policy violations table

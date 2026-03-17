@@ -16,6 +16,7 @@ const config: Config = {
     "^next/image$": "<rootDir>/src/shared/__mocks__/next-image.tsx",
     "^next/dynamic$": "<rootDir>/src/shared/__mocks__/next-dynamic.tsx",
     "^next/navigation$": "<rootDir>/src/shared/__mocks__/next-navigation.tsx",
+    "^recharts$": "<rootDir>/src/shared/__mocks__/recharts.tsx",
   },
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   transform: {
@@ -36,6 +37,8 @@ const config: Config = {
   transformIgnorePatterns: [
     "node_modules/(?!(@faker-js/faker|msw|@mswjs|until-async|@bundled-es-modules|@open-draft)/)",
   ],
+  coverageDirectory: "coverage",
+  coverageReporters: ["text", "lcov", "json-summary"],
   collectCoverageFrom: [
     "src/**/*.{ts,tsx}",
     "!src/**/*.d.ts",

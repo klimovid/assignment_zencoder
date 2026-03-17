@@ -1,8 +1,18 @@
 "use client";
 
+import {
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+} from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@shared/ui/card";
 import { KPICard } from "@entities/metric/ui/KPICard";
+import { ChartContainer } from "@entities/metric/ui/ChartContainer";
 import { Badge } from "@shared/ui/badge";
+import { CHART_COLORS } from "@shared/lib/chart-colors";
 import type { QualityResponse } from "../api/schemas";
 
 interface QualityPageProps {
@@ -43,27 +53,32 @@ export function QualityPage({ data, loading = false }: QualityPageProps) {
         <KPICard label="Approved PRs" value={review_outcomes.approved} format="number" />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Review Outcomes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-6 text-sm">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">{review_outcomes.approved}</p>
-              <p className="text-muted-foreground">Approved</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-amber-600">{review_outcomes.changes_requested}</p>
-              <p className="text-muted-foreground">Changes Requested</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-red-600">{review_outcomes.closed_unmerged}</p>
-              <p className="text-muted-foreground">Closed Unmerged</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Review Outcomes Donut */}
+      <ChartContainer
+        title="Review Outcomes"
+        accessibilityData={{
+          headers: ["Outcome", "Count", "Percentage"],
+          rows: review_outcomes.distribution.map((d) => [d.outcome, d.count, `${d.percentage}%`]),
+        }}
+      >
+        <ResponsiveContainer width="100%" height={300}>
+          <PieChart>
+            <Pie
+              data={review_outcomes.distribution}
+              dataKey="count"
+              nameKey="outcome"
+              innerRadius={60}
+              outerRadius={100}
+            >
+              {review_outcomes.distribution.map((_, i) => (
+                <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
+      </ChartContainer>
 
       <Card>
         <CardHeader>

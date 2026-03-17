@@ -1,7 +1,19 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@shared/ui/card";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from "recharts";
 import { KPICard } from "@entities/metric/ui/KPICard";
+import { ChartContainer } from "@entities/metric/ui/ChartContainer";
+import { CHART_COLORS } from "@shared/lib/chart-colors";
 import type { OperationsResponse } from "../api/schemas";
 
 interface OperationsPageProps {
@@ -12,6 +24,10 @@ interface OperationsPageProps {
 function formatMs(ms: number): string {
   if (ms >= 60000) return `${(ms / 60000).toFixed(1)}m`;
   return `${(ms / 1000).toFixed(1)}s`;
+}
+
+function formatTimestamp(ts: string): string {
+  return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
 export function OperationsPage({ data, loading = false }: OperationsPageProps) {
@@ -46,25 +62,44 @@ export function OperationsPage({ data, loading = false }: OperationsPageProps) {
         <KPICard label="P99 Wait" value={formatMs(wait_time.p99_ms)} />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Failure Categories</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {failure_rate.by_category.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No failures recorded.</p>
-          ) : (
-            <ul className="space-y-2">
-              {failure_rate.by_category.map((cat) => (
-                <li key={cat.failure_reason} className="flex items-center justify-between text-sm">
-                  <span className="font-mono text-xs">{cat.failure_reason}</span>
-                  <span className="font-mono">{cat.count} ({cat.percentage}%)</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+      {/* Queue Depth Trend */}
+      <ChartContainer
+        title="Queue Depth Over Time"
+        accessibilityData={{
+          headers: ["Time", "Depth"],
+          rows: queue_depth.trend.map((p) => [formatTimestamp(p.timestamp), p.depth]),
+        }}
+      >
+        <ResponsiveContainer width="100%" height={300}>
+          <AreaChart data={queue_depth.trend}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="timestamp" tickFormatter={formatTimestamp} />
+            <YAxis />
+            <Tooltip labelFormatter={(label) => formatTimestamp(String(label))} />
+            <Area type="monotone" dataKey="depth" stroke={CHART_COLORS[0]} fill={CHART_COLORS[0]} fillOpacity={0.3} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </ChartContainer>
+
+      {/* Failure Categories */}
+      <ChartContainer
+        title="Failure Categories"
+        isEmpty={failure_rate.by_category.length === 0}
+        accessibilityData={{
+          headers: ["Reason", "Count", "Percentage"],
+          rows: failure_rate.by_category.map((c) => [c.failure_reason, c.count, `${c.percentage}%`]),
+        }}
+      >
+        <ResponsiveContainer width="100%" height={250}>
+          <BarChart data={failure_rate.by_category} layout="vertical">
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis type="number" />
+            <YAxis type="category" dataKey="failure_reason" width={120} />
+            <Tooltip />
+            <Bar dataKey="count" fill={CHART_COLORS[3]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartContainer>
     </div>
   );
 }

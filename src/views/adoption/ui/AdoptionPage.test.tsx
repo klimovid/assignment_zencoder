@@ -17,9 +17,9 @@ describe("AdoptionPage", () => {
   it("renders DAU/WAU/MAU metrics", () => {
     const data = createAdoptionResponse();
     render(<AdoptionPage data={data} />);
-    expect(screen.getByText("DAU")).toBeInTheDocument();
-    expect(screen.getByText("WAU")).toBeInTheDocument();
-    expect(screen.getByText("MAU")).toBeInTheDocument();
+    expect(screen.getAllByText("DAU").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("WAU").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("MAU").length).toBeGreaterThanOrEqual(1);
   });
 
   // AD-3: Sessions by team
@@ -39,10 +39,23 @@ describe("AdoptionPage", () => {
     expect(loadingCards.length).toBeGreaterThanOrEqual(3);
   });
 
-  it("renders task type distribution", () => {
+  it("renders task type distribution chart", () => {
     const data = createAdoptionResponse();
     render(<AdoptionPage data={data} />);
-    expect(screen.getByText("Task Types")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Task Type Distribution" })).toBeInTheDocument();
+  });
+
+  it("renders DAU/WAU/MAU trend chart", () => {
+    const data = createAdoptionResponse();
+    render(<AdoptionPage data={data} />);
+    expect(screen.getByRole("img", { name: "DAU/WAU/MAU Trend" })).toBeInTheDocument();
+  });
+
+  it("renders all chart containers", () => {
+    const data = createAdoptionResponse();
+    render(<AdoptionPage data={data} />);
+    expect(screen.getByRole("img", { name: "Task Funnel" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Sessions by Team" })).toBeInTheDocument();
   });
 
   it("passes accessibility audit", async () => {

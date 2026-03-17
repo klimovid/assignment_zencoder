@@ -83,7 +83,7 @@ Spec-driven development with human-in-the-loop validation at every step:
 2. **Human in the loop** — validation at every step
 3. **First Principles Framework** — structured reasoning for complex tasks
 4. **Planning mode first** — plan before implementing complex tasks
-5. **Proper skills and MCPs** — leverage specialized tools (Context7, Playwright, Stitch)
+5. **Proper skills and MCPs** — leverage specialized tools (Context7, Playwright, Stitch MCP, Crome DevTools)
 6. **Stitch for UI generation** — design screens from PRD
 7. **Spec-driven development** — specs define the contract, code follows
 8. **Self-verification** — ask Claude to recheck its own output

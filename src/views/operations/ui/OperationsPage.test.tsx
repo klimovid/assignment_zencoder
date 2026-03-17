@@ -33,10 +33,16 @@ describe("OperationsPage", () => {
     expect(screen.getByText("SLA Compliance")).toBeInTheDocument();
   });
 
-  it("renders failure categories", () => {
+  it("renders failure categories chart", () => {
     const data = createOperationsResponse();
     render(<OperationsPage data={data} />);
-    expect(screen.getByText("Failure Categories")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Failure Categories" })).toBeInTheDocument();
+  });
+
+  it("renders queue depth trend chart", () => {
+    const data = createOperationsResponse();
+    render(<OperationsPage data={data} />);
+    expect(screen.getByRole("img", { name: "Queue Depth Over Time" })).toBeInTheDocument();
   });
 
   it("renders loading state", () => {

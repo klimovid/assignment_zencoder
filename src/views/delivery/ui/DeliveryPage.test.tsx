@@ -20,13 +20,16 @@ describe("DeliveryPage", () => {
   });
 
   // DL-3: Agent vs non-agent comparison
-  it("renders agent comparison table", () => {
+  it("renders agent vs non-agent comparison chart", () => {
     const data = createDeliveryResponse();
     render(<DeliveryPage data={data} />);
-    expect(screen.getByText("Agent vs Non-Agent")).toBeInTheDocument();
-    data.data.agent_vs_non_agent_comparison.forEach((row) => {
-      expect(screen.getByText(row.metric)).toBeInTheDocument();
-    });
+    expect(screen.getByRole("img", { name: "Agent vs Non-Agent" })).toBeInTheDocument();
+  });
+
+  it("renders PR throughput trend chart", () => {
+    const data = createDeliveryResponse();
+    render(<DeliveryPage data={data} />);
+    expect(screen.getByRole("img", { name: "PR Throughput Trend" })).toBeInTheDocument();
   });
 
   it("renders loading state", () => {

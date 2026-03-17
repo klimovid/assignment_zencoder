@@ -1,7 +1,20 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@shared/ui/card";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from "recharts";
 import { KPICard } from "@entities/metric/ui/KPICard";
+import { ChartContainer } from "@entities/metric/ui/ChartContainer";
+import { CHART_COLORS } from "@shared/lib/chart-colors";
 import type { DeliveryResponse } from "../api/schemas";
 
 interface DeliveryPageProps {
@@ -45,31 +58,48 @@ export function DeliveryPage({ data, loading = false }: DeliveryPageProps) {
         <KPICard label="Time to First PR" value={formatDuration(time_to_first_pr.value, time_to_first_pr.unit)} />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Agent vs Non-Agent</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left text-muted-foreground">
-                <th className="pb-2">Metric</th>
-                <th className="pb-2 text-right">Agent</th>
-                <th className="pb-2 text-right">Non-Agent</th>
-              </tr>
-            </thead>
-            <tbody>
-              {agent_vs_non_agent_comparison.map((row) => (
-                <tr key={row.metric} className="border-b last:border-b-0">
-                  <td className="py-2">{row.metric}</td>
-                  <td className="py-2 text-right font-mono">{row.agent_value}</td>
-                  <td className="py-2 text-right font-mono">{row.non_agent_value}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
+      {/* PR Throughput Trend */}
+      <ChartContainer
+        title="PR Throughput Trend"
+        accessibilityData={{
+          headers: ["Date", "Agent Opened", "Agent Merged", "Non-Agent Merged"],
+          rows: pr_throughput.trend.map((p) => [p.date, p.agent_opened, p.agent_merged, p.non_agent_merged]),
+        }}
+      >
+        <ResponsiveContainer width="100%" height={300}>
+          <AreaChart data={pr_throughput.trend}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Area type="monotone" dataKey="agent_opened" name="Agent Opened" stroke={CHART_COLORS[0]} fill={CHART_COLORS[0]} fillOpacity={0.3} />
+            <Area type="monotone" dataKey="agent_merged" name="Agent Merged" stroke={CHART_COLORS[1]} fill={CHART_COLORS[1]} fillOpacity={0.3} />
+            <Area type="monotone" dataKey="non_agent_merged" name="Non-Agent Merged" stroke={CHART_COLORS[2]} fill={CHART_COLORS[2]} fillOpacity={0.3} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </ChartContainer>
+
+      {/* Agent vs Non-Agent Comparison */}
+      <ChartContainer
+        title="Agent vs Non-Agent"
+        accessibilityData={{
+          headers: ["Metric", "Agent", "Non-Agent"],
+          rows: agent_vs_non_agent_comparison.map((r) => [r.metric, r.agent_value, r.non_agent_value]),
+        }}
+      >
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={agent_vs_non_agent_comparison}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="metric" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="agent_value" name="Agent" fill={CHART_COLORS[0]} />
+            <Bar dataKey="non_agent_value" name="Non-Agent" fill={CHART_COLORS[1]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartContainer>
     </div>
   );
 }
