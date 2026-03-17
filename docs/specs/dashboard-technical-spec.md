@@ -34,7 +34,8 @@
 ```bash
 npx create-next-app@14 dashboard-ui --typescript --tailwind --eslint --app --src-dir
 cd dashboard-ui
-npx shadcn-ui@latest init    # style: default, baseColor: slate, css variables: yes
+npx shadcn@latest init       # style: default, baseColor: slate, css variables: yes
+npx shadcn@latest add button card table skeleton input select badge tooltip dialog
 ```
 
 ### 1.2 Key Dependencies
@@ -44,7 +45,10 @@ npx shadcn-ui@latest init    # style: default, baseColor: slate, css variables: 
 | `next` | ^14.2 | App Router, SSR, middleware |
 | `react` / `react-dom` | ^18.3 | UI framework |
 | `tailwindcss` | ^3.4 | Utility-first styling |
-| `@shadcn/ui` | latest | Design system primitives |
+| `shadcn` (CLI) | latest | Scaffolds accessible UI components (Radix UI + Tailwind) into `src/shared/ui/` |
+| `@radix-ui/*` | latest | Headless accessible primitives (installed per-component by Shadcn CLI) |
+| `class-variance-authority` | ^0.7 | Component variant API (`cva`) used by Shadcn components |
+| `clsx` + `tailwind-merge` | latest | Conditional class merging utility (`cn()`) |
 | `mobx` / `mobx-react-lite` | ^6 / ^4 | Observable UI state |
 | `@tanstack/react-query` | ^5 | Server state, caching |
 | `recharts` | ^2.12 | Charts |
@@ -65,6 +69,7 @@ npx shadcn-ui@latest init    # style: default, baseColor: slate, css variables: 
 | `playwright` | E2E tests |
 | `msw` | API mocking (tests) |
 | `@faker-js/faker` | Realistic test data generation |
+| `jest-axe` | Accessibility assertions (WCAG) |
 | `eslint-plugin-boundaries` | FSD layer enforcement |
 
 ### 1.3 TypeScript Configuration
@@ -284,7 +289,7 @@ project-root/
 │   │
 │   └── shared/                             ← Layer 1: Shared infrastructure
 │       ├── ui/
-│       │   ├── button.tsx                  ← Shadcn components
+│       │   ├── button.tsx                  ← Shadcn UI components (Radix + Tailwind)
 │       │   ├── card.tsx
 │       │   ├── table.tsx
 │       │   ├── skeleton.tsx
@@ -308,6 +313,7 @@ project-root/
 │       │   ├── permissions.ts              ← RBAC map
 │       │   └── env.ts                      ← Zod-validated env
 │       ├── lib/
+│       │   ├── utils.ts                    ← cn() helper (clsx + tailwind-merge)
 │       │   ├── formatters.ts               ← Date, number, currency formatters
 │       │   ├── i18n.ts                     ← next-intl setup
 │       │   ├── hooks/
@@ -1028,7 +1034,9 @@ Session Deep-Dive is **not in sidebar** — reached only via row click in Adopti
 
 ## 7. Component Specs (per FSD Layer)
 
-### 7.1 `shared/ui/theme/` — Design Tokens
+### 7.1 `shared/ui/theme/` — Design Tokens (Shadcn CSS Variables)
+
+Design tokens follow the Shadcn UI convention: CSS custom properties with HSL values consumed via `hsl(var(--token))` in Tailwind config. This enables theme switching (light/dark) and ensures all Shadcn components inherit the design system automatically.
 
 ```css
 /* src/shared/ui/theme/tokens.css */
@@ -1103,6 +1111,16 @@ export default {
 ```
 
 ### 7.2 `shared/lib/` — Utilities
+
+```typescript
+// src/shared/lib/utils.ts — Shadcn cn() helper
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+```
 
 ```typescript
 // src/shared/lib/formatters.ts
@@ -1512,6 +1530,248 @@ CI step validates Zod schemas against `openapi.yaml`:
 | Theme toggle | Click toggle → verify dark class → refresh → verify persistence | P1 |
 | Notification center | Open dropdown → mark read → verify badge update | P1 |
 | Mobile responsive | Resize viewport → verify sidebar collapse → verify unavailable views | P1 |
+
+### 11.6 TDD Workflow
+
+Каждая фича реализуется по циклу **Red → Green → Refactor**:
+
+```
+1. RED    — написать тест по acceptance criteria (тест падает)
+2. GREEN  — минимальная реализация, чтобы тест прошёл
+3. REFACTOR — улучшить код, тесты остаются зелёными
+```
+
+**Порядок для нового FSD-slice:**
+
+```
+1. Написать Zod-схему ответа API (entities/model/types.ts)
+2. Написать unit-тест на схему (edge cases, nullable fields)
+3. Написать MSW handler + factory (shared/__mocks__/)
+4. Написать hook-тест (entities/api/useXxx.test.ts) → RED
+5. Реализовать hook → GREEN
+6. Написать компонент-тест (render + assert) → RED
+7. Реализовать компонент → GREEN
+8. REFACTOR: выделить переиспользуемые части
+```
+
+**Порядок для нового widget:**
+
+```
+1. Написать integration-тест (рендер widget с MSW) → RED
+2. Реализовать widget из готовых entities/features → GREEN
+3. Добавить Storybook story
+```
+
+**Порядок для page:**
+
+```
+1. Написать E2E сценарий в Playwright (или page integration test) → RED
+2. Скомпоновать page из widgets → GREEN
+3. Проверить accessibility (axe-core)
+```
+
+### 11.7 Acceptance Test Matrix
+
+Маппинг PRD acceptance criteria → конкретные тесты. Каждая строка — один testable requirement.
+
+#### Executive Overview
+
+| # | Acceptance Criteria | Test Type | Test Location | Priority |
+|---|-------------------|-----------|---------------|----------|
+| OV-1 | KPI cards отображают active_users, sessions, outcome_rate, cost_per_task, ci_pass_rate | Slice | `pages/executive-overview/ui/ExecutiveOverviewPage.test.tsx` | P0 |
+| OV-2 | Delta indicators показывают ↑↓% относительно предыдущего периода | Unit | `entities/metric/ui/DeltaIndicator.test.tsx` | P0 |
+| OV-3 | Date range picker меняет time_range query param | Integration | `features/filter-management/ui/DateRangePicker.test.tsx` | P0 |
+| OV-4 | Sparklines рендерятся для каждого KPI | Slice | `pages/executive-overview/ui/ExecutiveOverviewPage.test.tsx` | P1 |
+| OV-5 | 7d/30d/90d переключение обновляет данные | E2E | `e2e/executive-overview.spec.ts` | P0 |
+| OV-6 | Нет breakdown по individual developers | Slice | assert: response не содержит user-level данных | P1 |
+
+#### Adoption & Usage
+
+| # | Acceptance Criteria | Test Type | Test Location | Priority |
+|---|-------------------|-----------|---------------|----------|
+| AD-1 | Task funnel: Created → Started → Completed с conversion rates | Slice | `pages/adoption/ui/AdoptionPage.test.tsx` | P0 |
+| AD-2 | Фильтрация по team, repo, language, task_type, model | Integration | `features/filter-management/` | P0 |
+| AD-3 | Drill-down из session row → Session Deep-Dive | E2E | `e2e/adoption.spec.ts` | P0 |
+| AD-4 | Sessions grouped by team в bar chart | Slice | `pages/adoption/ui/AdoptionPage.test.tsx` | P1 |
+| AD-5 | DAU/WAU/MAU line charts рендерятся | Slice | `pages/adoption/ui/AdoptionPage.test.tsx` | P0 |
+| AD-6 | Empty state для нового org с onboarding guide | Slice | `pages/adoption/ui/AdoptionPage.test.tsx` (empty fixture) | P0 |
+
+#### Delivery Impact
+
+| # | Acceptance Criteria | Test Type | Test Location | Priority |
+|---|-------------------|-----------|---------------|----------|
+| DL-1 | Agent vs non-agent PR comparison (grouped bar) | Slice | `pages/delivery/ui/DeliveryPage.test.tsx` | P0 |
+| DL-2 | TTM trend line с 30-day moving average | Slice | `pages/delivery/ui/DeliveryPage.test.tsx` | P0 |
+| DL-3 | Period comparison toggle: dashed overlay для prev period | Integration | `features/filter-management/ui/PeriodComparisonToggle.test.tsx` | P1 |
+| DL-4 | Drill-down из PR row → Session Deep-Dive | E2E | `e2e/delivery.spec.ts` | P0 |
+| DL-5 | Throughput by day/week с trend overlay | Slice | `pages/delivery/ui/DeliveryPage.test.tsx` | P1 |
+
+#### Cost & Budgets
+
+| # | Acceptance Criteria | Test Type | Test Location | Priority |
+|---|-------------------|-----------|---------------|----------|
+| CO-1 | Current spend vs budget limit KPI с visual indicator | Slice | `pages/cost/ui/CostPage.test.tsx` | P0 |
+| CO-2 | Spend breakdown by team/repo/model (stacked bar) | Slice | `pages/cost/ui/CostPage.test.tsx` | P0 |
+| CO-3 | Cost forecast с confidence bounds | Slice | `pages/cost/ui/CostPage.test.tsx` | P1 |
+| CO-4 | Budget threshold alerts (50/75/90/100%) отображаются | Integration | `entities/notification/` | P0 |
+| CO-5 | Cost per task и cost per PR metrics | Slice | `pages/cost/ui/CostPage.test.tsx` | P0 |
+
+#### Quality & Security
+
+| # | Acceptance Criteria | Test Type | Test Location | Priority |
+|---|-------------------|-----------|---------------|----------|
+| QA-1 | CI pass rate как primary metric | Slice | `pages/quality/ui/QualityPage.test.tsx` | P0 |
+| QA-2 | Review outcome distribution (bar/pie) | Slice | `pages/quality/ui/QualityPage.test.tsx` | P0 |
+| QA-3 | Policy violations table: type, severity, timestamp | Slice | `pages/quality/ui/QualityPage.test.tsx` | P0 |
+| QA-4 | Фильтрация по violation type | Integration | `pages/quality/ui/QualityPage.test.tsx` | P1 |
+
+#### Operations
+
+| # | Acceptance Criteria | Test Type | Test Location | Priority |
+|---|-------------------|-----------|---------------|----------|
+| OP-1 | Queue depth KPI с intra-day trend area chart | Slice | `pages/operations/ui/OperationsPage.test.tsx` | P0 |
+| OP-2 | Failure rate breakdown by category | Slice | `pages/operations/ui/OperationsPage.test.tsx` | P0 |
+| OP-3 | SLA compliance % KPI | Slice | `pages/operations/ui/OperationsPage.test.tsx` | P0 |
+| OP-4 | Data polls every 60s (refetchInterval) | Unit | `pages/operations/api/useOperations.test.ts` | P0 |
+| OP-5 | Triage actions: retry/cancel на failed tasks | E2E | `e2e/operations.spec.ts` | P1 |
+
+#### Session Deep-Dive
+
+| # | Acceptance Criteria | Test Type | Test Location | Priority |
+|---|-------------------|-----------|---------------|----------|
+| SD-1 | Vertical timeline рендерит все steps | Widget | `widgets/session-timeline/ui/SessionTimeline.test.tsx` | P0 |
+| SD-2 | Step cards: type, duration, cost, status с color-coding | Widget | `widgets/session-timeline/ui/SessionTimeline.test.tsx` | P0 |
+| SD-3 | Expand step → detail panel (Think/Act/Observe) | Widget | `widgets/session-timeline/ui/SessionTimeline.test.tsx` | P0 |
+| SD-4 | Diff viewer: side-by-side, syntax highlighting | Widget | `widgets/session-timeline/ui/DiffViewer.test.tsx` | P0 |
+| SD-5 | Cost breakdown per-step horizontal bar chart | Widget | `widgets/cost-breakdown/ui/CostBreakdown.test.tsx` | P0 |
+| SD-6 | Breadcrumbs: Dashboard > [View] > [Team] > [Session] | Widget | `widgets/breadcrumbs/ui/Breadcrumbs.test.tsx` | P1 |
+| SD-7 | Deep linking: shareable URL с sessionId | E2E | `e2e/session-deep-dive.spec.ts` | P0 |
+
+#### Settings
+
+| # | Acceptance Criteria | Test Type | Test Location | Priority |
+|---|-------------------|-----------|---------------|----------|
+| ST-1 | Theme toggle persists (localStorage + API) | E2E | `e2e/settings.spec.ts` | P0 |
+| ST-2 | Timezone selection отражается в date displays | Integration | `pages/settings/ui/SettingsPage.test.tsx` | P1 |
+| ST-3 | Default view preference сохраняется и применяется | E2E | `e2e/settings.spec.ts` | P1 |
+| ST-4 | Profile info (name, email, role) отображается read-only | Slice | `pages/settings/ui/SettingsPage.test.tsx` | P0 |
+| ST-5 | Avatar upload | Integration | `pages/settings/ui/SettingsPage.test.tsx` | P1 |
+
+#### Cross-Cutting
+
+| # | Acceptance Criteria | Test Type | Test Location | Priority |
+|---|-------------------|-----------|---------------|----------|
+| CC-1 | Filter state сериализуется в URL query params | Unit | `features/filter-management/lib/URLSyncProvider.test.tsx` | P0 |
+| CC-2 | Browser back/forward навигация работает с filter state | E2E | `e2e/navigation.spec.ts` | P0 |
+| CC-3 | Sidebar навигация: 6 views + settings, active state | Widget | `widgets/sidebar-nav/ui/SidebarNav.test.tsx` | P0 |
+| CC-4 | Export CSV: скачивается файл с текущими фильтрами | E2E | `e2e/export.spec.ts` | P0 |
+| CC-5 | Notification badge обновляется при mark as read | Integration | `entities/notification/` | P0 |
+| CC-6 | Period comparison toggle: prev period dashed overlay | Integration | `features/filter-management/ui/PeriodComparisonToggle.test.tsx` | P1 |
+| CC-7 | Sidebar collapse на mobile (< 768px) | E2E | `e2e/responsive.spec.ts` | P1 |
+| CC-8 | Unavailable views на mobile показывают "Desktop only" | Widget | `widgets/app-shell/ui/AppShell.test.tsx` | P1 |
+
+### 11.8 Edge Cases & Error States
+
+| Scenario | Expected Behavior | Test Type | Priority |
+|----------|-------------------|-----------|----------|
+| **API returns 500** | Inline error с retry button, остальные компоненты работают | Slice (MSW override) | P0 |
+| **API returns 401** | Redirect на `/api/auth/refresh`, transparent to user | Unit (`apiFetch`) | P0 |
+| **API returns 429** | Toast "Too many requests", retry after `Retry-After` | Unit (`apiFetch`) | P1 |
+| **Network timeout** | Loading state → error после timeout | Slice | P1 |
+| **Empty dataset** (new org) | Onboarding guide: "Connect repo → Run task → View analytics" | Slice (empty fixture) | P0 |
+| **No data for filters** | "No data matches current filters" + reset filters action | Slice (empty fixture) | P0 |
+| **Cohort < 5 members** | Suppressed breakdown, server returns aggregated data | Slice (fixture) | P1 |
+| **Session in "running" status** | Timeline shows completed steps + spinner on current step | Widget | P1 |
+| **Extremely long session** (50+ steps) | Virtualized list, no DOM bloat | Widget (perf assertion) | P1 |
+| **Concurrent filter changes** | Only latest request is used (TanStack Query cancellation) | Integration | P1 |
+| **Stale cache + refetch** | Stale data shown immediately, fresh data replaces it | Integration | P1 |
+| **JWT expired mid-session** | Silent refresh, no data loss | E2E | P0 |
+| **WebSocket disconnect** (Operations) | Fallback to polling, reconnect indicator | Integration | P2 |
+| **CSV export large dataset** | Download starts, no browser freeze | E2E | P1 |
+| **Invalid URL params** | Ignored, fallback to defaults | Unit (URLSyncProvider) | P1 |
+
+### 11.9 Accessibility Testing
+
+Каждый компонент проверяется на WCAG 2.1 AA compliance:
+
+```typescript
+// Пример: axe-core интеграция в Jest
+import { render } from '@testing-library/react';
+import { axe, toHaveNoViolations } from 'jest-axe';
+
+expect.extend(toHaveNoViolations);
+
+test('KPICard has no accessibility violations', async () => {
+  const { container } = render(<KPICard title="Active Users" value={142} delta={5.2} />);
+  const results = await axe(container);
+  expect(results).toHaveNoViolations();
+});
+```
+
+| Category | What to Test | Tool | Priority |
+|----------|-------------|------|----------|
+| **Color contrast** | All text meets 4.5:1 ratio (AA), both light and dark theme | jest-axe + Storybook a11y addon | P0 |
+| **Keyboard navigation** | Tab order: sidebar → filters → content; Enter/Space activates | E2E (Playwright) | P0 |
+| **Screen reader** | KPI cards: `role="status"`, `aria-label` с value + delta | jest-axe | P0 |
+| **Charts** | `aria-label` на ChartContainer, скрытая data table fallback | Slice | P0 |
+| **Focus management** | Modal trap, return focus on close, skip-to-content link | E2E | P1 |
+| **Reduced motion** | `prefers-reduced-motion` отключает chart animations | Slice (media query mock) | P1 |
+| **Focus visible** | Visible focus ring на всех интерактивных элементах | E2E | P0 |
+| **Landmarks** | `<nav>`, `<main>`, `<aside>` properly used | jest-axe | P0 |
+| **Live regions** | Notification badge updates announced (`aria-live="polite"`) | Slice | P1 |
+| **Error announcements** | Form errors linked via `aria-describedby` | Slice | P0 |
+
+### 11.10 Visual Regression Testing
+
+```typescript
+// Playwright visual comparison
+// e2e/visual/executive-overview.visual.spec.ts
+import { test, expect } from '@playwright/test';
+import { faker } from '@faker-js/faker';
+
+test.beforeEach(() => {
+  faker.seed(42); // Deterministic data for stable screenshots
+});
+
+test('executive overview matches snapshot (light)', async ({ page }) => {
+  await page.goto('/dashboard');
+  await page.waitForSelector('[data-testid="kpi-card"]');
+  await expect(page).toHaveScreenshot('overview-light.png', {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+
+test('executive overview matches snapshot (dark)', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/dashboard');
+  await page.waitForSelector('[data-testid="kpi-card"]');
+  await expect(page).toHaveScreenshot('overview-dark.png', {
+    maxDiffPixelRatio: 0.01,
+  });
+});
+```
+
+| What | Viewports | Themes | Priority |
+|------|-----------|--------|----------|
+| Executive Overview (KPI cards + charts) | Desktop 1280×720, Mobile 375×812 | Light, Dark | P0 |
+| Sidebar navigation (expanded + collapsed) | Desktop, Mobile | Light, Dark | P0 |
+| Session Deep-Dive (timeline + diff) | Desktop 1280×720 | Light, Dark | P1 |
+| Empty state (onboarding) | Desktop 1280×720 | Light | P1 |
+| Error state (API failure) | Desktop 1280×720 | Light | P1 |
+| Filter bar (with active filters) | Desktop 1280×720 | Light | P1 |
+
+### 11.11 CI Test Stages Summary
+
+```
+┌─────────────┐    ┌──────────────┐    ┌──────────────┐    ┌───────────┐
+│  Unit tests │    │ Slice tests  │    │  E2E tests   │    │  Visual   │
+│  (Jest)     │───→│ (Jest + MSW) │───→│ (Playwright) │───→│ Regression│
+│  ~80% cov   │    │  ~80% cov    │    │  P0 paths    │    │ (PW)      │
+└─────────────┘    └──────────────┘    └──────────────┘    └───────────┘
+       │                  │                    │                  │
+       ▼                  ▼                    ▼                  ▼
+   Blocks merge      Blocks merge        Blocks merge      Warns only
+```
 
 ---
 

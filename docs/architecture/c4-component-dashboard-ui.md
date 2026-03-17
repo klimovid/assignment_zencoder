@@ -135,7 +135,7 @@ C4Component
     Container_Boundary(dashboardUI, "Dashboard UI (React / Next.js App Router + FSD)") {
 
         Boundary(sharedLayer, "shared/ — Shared Infrastructure") {
-            Component(designSystem, "Design System", "@platform/ui (React)", "Button, Card, Table, Skeleton, Input, Select, DatePicker, Badge, Tooltip, Modal, Dialog, Icon")
+            Component(designSystem, "Design System", "Shadcn UI (Radix UI + Tailwind CSS)", "Button, Card, Table, Skeleton, Input, Select, DatePicker, Badge, Tooltip, Modal, Dialog, Icon")
             Component(apiClient, "API Client", "openapi-typescript + Zod", "Auto-generated types, fetch wrapper, JWT injection, runtime response validation")
             Component(queryKeyFactory, "Query Key Factory", "TypeScript", "Centralized key generation: queryKeys.{view}(filters)")
             Component(uiStore, "UIStore", "MobX", "Sidebar collapsed, mobile breakpoint (localStorage)")
@@ -240,7 +240,7 @@ The lowest layer. Provides design system, API client, utilities, and configurati
 
 ### `shared/ui/` — Design System
 
-These components live in a shared package (`@platform/ui` or monorepo `packages/ui`) and are used by both Dashboard UI and Web App UI. This ensures visual consistency across the platform.
+Components are based on **Shadcn UI** — accessible Radix UI primitives styled with Tailwind CSS. Shadcn CLI copies component source into `src/shared/ui/`, giving full ownership and customization without runtime dependency. Components are shared between Dashboard UI and Web App UI for visual consistency.
 
 | Component | Description |
 |-----------|-------------|
@@ -646,7 +646,7 @@ User clicks filter ──→ FilterBar ──→ FilterStore.setFilter()
 | 5 | **MobX for UI state + TanStack Query for server state** | MobX excels at observable UI state (filters, theme); TanStack Query excels at server cache (deduplication, background refetch, stale-while-revalidate) | Two state management paradigms; team must understand both |
 | 6 | **Page-specific query hooks in `pages/{slice}/api/`** | Analytics view hooks (useOverview, useAdoption, etc.) are page-specific — only used by one page. Placing them in the page slice follows FSD's colocate-by-feature principle. | Entity-level hooks (useSession, useProfile) live in `entities/` since they're shared across pages |
 | 7 | **FilterStore in `features/` (not `entities/`)** | Filtering is a user-facing capability (feature), not a business entity. FilterStore + FilterBar + URLSyncProvider form a cohesive feature slice. | Features can't import from widgets/pages, so all filter-dependent components must pass filter data down |
-| 8 | **Design System as shared package** | Visual consistency between Dashboard UI and Web App UI; single source of truth for primitives | Package versioning overhead; breaking changes affect both apps |
+| 8 | **Shadcn UI as Design System** | Accessible Radix UI primitives styled with Tailwind CSS; components copied into codebase via CLI (full ownership, no runtime dependency). Visual consistency between Dashboard UI and Web App UI | Must manually sync component updates from Shadcn registry; customizations may diverge between apps |
 | 9 | **Session Deep-Dive as sub-page, not sidebar view** | Deep-dive is a drill-down destination, not a primary navigation target; keeps sidebar clean (6 items + Settings) | Less discoverable; users must know to click a session row to get there |
 | 10 | **60s polling for Operations and Notifications** | Simple, predictable; no WebSocket infrastructure needed for MVP | Not truly real-time; 60s lag acceptable for operational triage but not for live monitoring |
 

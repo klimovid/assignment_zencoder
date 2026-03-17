@@ -350,7 +350,7 @@ The platform uses a **Bridge tenancy model** (validated pattern, R=0.9):
 
 | | |
 |-|-|
-| **Technology** | React / Next.js (App Router), Tailwind CSS, MobX (UI state) + TanStack Query (server state), Recharts. Shared design system with Web App UI |
+| **Technology** | React / Next.js (App Router), Shadcn UI (Radix UI primitives + Tailwind CSS), MobX (UI state) + TanStack Query (server state), Recharts. Shared design system with Web App UI |
 | **Responsibility** | Analytics visualization for all personas |
 
 **Views**:
@@ -556,7 +556,7 @@ All containers emit audit events → Event Bus (Kafka, dedicated audit topic)
 | Category | Technology | Rationale |
 |----------|-----------|-----------|
 | **Framework** | React + Next.js (App Router) | SSR/SSG for performance, shared with Web App UI |
-| **Styling** | Tailwind CSS | Utility-first, consistent design system, rapid iteration |
+| **Styling & UI Kit** | Shadcn UI + Tailwind CSS | Accessible Radix UI primitives with Tailwind styling; components copied into codebase (full ownership, no runtime dependency) |
 | **State management** | MobX (UI state) + TanStack Query (server state + cache) | MobX for observable UI state (filters, theme); TanStack Query for server cache (deduplication, background refetch, stale-while-revalidate) |
 | **Charts** | Recharts | Declarative React API, lightweight, covers standard dashboard charts (line, bar, area, pie) |
 | **Testing (unit/integration)** | Jest + React Testing Library | Component-level testing with user-centric assertions |
