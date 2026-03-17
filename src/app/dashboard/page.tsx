@@ -1,7 +1,10 @@
+"use client";
+
+import { useOverview } from "@pages/executive-overview/api/useOverview";
+import { ExecutiveOverviewPage } from "@pages/executive-overview/ui/ExecutiveOverviewPage";
+
 export default function DashboardPage() {
-  return (
-    <div className="flex min-h-[50vh] items-center justify-center">
-      <p className="text-muted-foreground">Executive Overview — coming in Phase 7</p>
-    </div>
-  );
+  const { data, isLoading } = useOverview({ time_range: "30d" });
+
+  return <ExecutiveOverviewPage data={data ?? null} loading={isLoading} />;
 }
