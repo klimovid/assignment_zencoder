@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { observer } from "mobx-react-lite";
 import {
   LayoutDashboard,
   Users,
@@ -13,6 +14,8 @@ import {
 } from "lucide-react";
 import { cn } from "@shared/lib/utils";
 import { DASHBOARD_ROUTES } from "@shared/config/routes";
+import { ROUTE_PERMISSIONS } from "@shared/config/permissions";
+import { useAuthStore } from "@features/auth/model/AuthContext";
 
 const navItems = [
   { label: "Executive Overview", href: DASHBOARD_ROUTES.dashboard, icon: LayoutDashboard },
@@ -27,8 +30,15 @@ interface SidebarNavProps {
   collapsed?: boolean;
 }
 
-export function SidebarNav({ collapsed = false }: SidebarNavProps) {
+export const SidebarNav = observer(function SidebarNav({ collapsed = false }: SidebarNavProps) {
   const pathname = usePathname();
+  const auth = useAuthStore();
+
+  const visibleItems = navItems.filter((item) => {
+    const allowed = ROUTE_PERMISSIONS[item.href];
+    if (!allowed) return true;
+    return auth.role === "org_admin" || (auth.role && allowed.includes(auth.role));
+  });
 
   function isActive(href: string) {
     if (href === "/dashboard") return pathname === "/dashboard";
@@ -37,7 +47,7 @@ export function SidebarNav({ collapsed = false }: SidebarNavProps) {
 
   return (
     <nav aria-label="Main navigation" className="flex flex-col gap-1 p-2">
-      {navItems.map((item) => {
+      {visibleItems.map((item) => {
         const Icon = item.icon;
         const active = isActive(item.href);
 
@@ -77,4 +87,4 @@ export function SidebarNav({ collapsed = false }: SidebarNavProps) {
       </Link>
     </nav>
   );
-}
+});

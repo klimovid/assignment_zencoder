@@ -31,3 +31,24 @@ export const ROUTE_PERMISSIONS: Record<string, readonly Role[]> = {
   "/dashboard/operations": [Role.ENG_MANAGER, Role.PLATFORM_ENG],
   "/dashboard/settings": ALL_ROLES,
 };
+
+/** Ordered list of dashboard routes for default redirect. */
+const ROUTE_PRIORITY: string[] = [
+  "/dashboard",
+  "/dashboard/adoption",
+  "/dashboard/delivery",
+  "/dashboard/cost",
+  "/dashboard/quality",
+  "/dashboard/operations",
+  "/dashboard/settings",
+];
+
+/** Returns the first accessible route for a given role. */
+export function getDefaultRoute(role: Role): string {
+  if (role === Role.ORG_ADMIN) return "/dashboard";
+  for (const route of ROUTE_PRIORITY) {
+    const allowed = ROUTE_PERMISSIONS[route];
+    if (allowed?.includes(role)) return route;
+  }
+  return "/dashboard/settings";
+}

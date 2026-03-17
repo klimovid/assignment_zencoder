@@ -75,7 +75,7 @@ describe("AuthGuard", () => {
     expect(screen.getByText("Manager Content")).toBeInTheDocument();
   });
 
-  it("renders default fallback when user lacks required role", () => {
+  it("redirects to default route when user lacks required role", () => {
     const store = new AuthStore();
     store.setAuth({
       user: { id: "u1", email: "a@b.com", name: "Test" },
@@ -91,28 +91,7 @@ describe("AuthGuard", () => {
         <div>Manager Content</div>
       </AuthGuard>,
     );
-    expect(screen.queryByText("Manager Content")).not.toBeInTheDocument();
-    expect(screen.getByRole("alert")).toBeInTheDocument();
-    expect(screen.getByText("Access Restricted")).toBeInTheDocument();
-  });
-
-  it("renders custom fallback when user lacks role", () => {
-    const store = new AuthStore();
-    store.setAuth({
-      user: { id: "u1", email: "a@b.com", name: "Test" },
-      role: "ic_dev",
-      orgId: "org-1",
-      teams: [],
-      permissions: [],
-    });
-
-    renderWithAuth(
-      store,
-      <AuthGuard roles={["finops"]} fallback={<div>Custom Denied</div>}>
-        <div>Content</div>
-      </AuthGuard>,
-    );
-    expect(screen.getByText("Custom Denied")).toBeInTheDocument();
+    expect(redirect).toHaveBeenCalledWith("/dashboard/adoption");
   });
 
   it("allows org_admin regardless of role restriction", () => {
