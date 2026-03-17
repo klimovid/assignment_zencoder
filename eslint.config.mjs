@@ -11,6 +11,7 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "src/shared/__mocks__/**",
   ]),
   {
     plugins: {
@@ -37,7 +38,7 @@ const eslintConfig = defineConfig([
             { from: "pages", allow: ["widgets", "features", "entities", "shared"] },
             { from: "widgets", allow: ["features", "entities", "shared"] },
             { from: "features", allow: ["entities", "shared"] },
-            { from: "entities", allow: ["shared"] },
+            { from: "entities", allow: ["entities", "shared"] },
             { from: "shared", allow: ["shared"] },
           ],
         },

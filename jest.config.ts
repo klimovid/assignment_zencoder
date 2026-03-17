@@ -22,7 +22,17 @@ const config: Config = {
         tsconfig: "tsconfig.json",
       },
     ],
+    "^.+\\.js$": [
+      "ts-jest",
+      {
+        tsconfig: "tsconfig.json",
+        useESM: false,
+      },
+    ],
   },
+  transformIgnorePatterns: [
+    "node_modules/(?!(@faker-js/faker|msw|@mswjs|until-async|@bundled-es-modules|@open-draft)/)",
+  ],
   collectCoverageFrom: [
     "src/**/*.{ts,tsx}",
     "!src/**/*.d.ts",
