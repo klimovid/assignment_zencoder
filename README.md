@@ -50,31 +50,31 @@ yarn test:e2e     # Playwright (E2E)
 
 Spec-driven development with human-in-the-loop validation at every step:
 
-| # | Step | Status |
-|---|------|--------|
-| 1 | Define task understanding, requirements, and criteria with Claude | Done |
-| 2 | Agree on approaches and methodology | Done |
-| 3 | Research similar systems (architecture & product) | Done |
-| 3.1 | Generate research prompt for architecture | Done |
-| 3.2 | Architecture research via Gemini | Done |
-| 3.3 | Architecture research via OpenAI Deep Research | Done |
-| 3.4 | Architecture research via Claude + synthesis summary | Done |
-| 4 | Generate C4 System Context diagram | Done |
-| 5 | Generate research prompt for dashboard | Done |
-| 5.1 | Dashboard research via Gemini | Done |
-| 5.2 | Dashboard research via OpenAI Deep Research | Done |
-| 5.3 | Dashboard research via Claude + synthesis summary | Done |
-| 6 | Generate C4 Container diagram (full platform, dashboard focus) | Done |
-| 7 | Create Dashboard PRD from research + architecture | Done |
-| 8 | Generate C4 Component diagram (zoom into Dashboard container) | Done |
-| 9 | Generate UI designs via Stitch (Figma Make) from PRD | Done |
-| 10 | Cross-check all documents for consistency | Done |
-| 11 | Generate Technical Implementation Spec from PRD | Done |
-| 12 | Extend Technical Spec with testing strategy (section 11) | Done |
-| 13 | Create implementation plan | Done |
-| 14 | Implementation | **In Progress** |
-| 15 | Build mock API server | Pending |
-| 16 | Deploy dashboard + mock server to Vercel | Pending |
+| # | Step |
+|---|------|
+| 1 | Define task understanding, requirements, and criteria with Claude |
+| 2 | Agree on approaches and methodology |
+| 3 | Research similar systems (architecture & product) |
+| 3.1 | Generate research prompt for architecture |
+| 3.2 | Architecture research via Gemini |
+| 3.3 | Architecture research via OpenAI Deep Research |
+| 3.4 | Architecture research via Claude + synthesis summary |
+| 4 | Generate C4 System Context diagram |
+| 5 | Generate research prompt for dashboard |
+| 5.1 | Dashboard research via Gemini |
+| 5.2 | Dashboard research via OpenAI Deep Research |
+| 5.3 | Dashboard research via Claude + synthesis summary |
+| 6 | Generate C4 Container diagram (full platform, dashboard focus) |
+| 7 | Create Dashboard PRD from research + architecture |
+| 8 | Generate C4 Component diagram (zoom into Dashboard container) |
+| 9 | Generate UI designs via Stitch (Figma Make) from PRD |
+| 10 | Cross-check all documents for consistency |
+| 11 | Generate Technical Implementation Spec from PRD |
+| 12 | Extend Technical Spec with testing strategy (section 11) |
+| 13 | Create implementation plan |
+| 14 | Implementation |
+| 15 | Build mock API server |
+| 16 | Deploy dashboard + mock server to Vercel |
 
 ## Approaches
 
@@ -86,4 +86,4 @@ Spec-driven development with human-in-the-loop validation at every step:
 5. **Proper skills and MCPs** — leverage specialized tools (Context7, Playwright, Stitch MCP, Crome DevTools)
 6. **Stitch for UI generation** — design screens from PRD
 7. **Spec-driven development** — specs define the contract, code follows
-8. **Self-verification** — ask Claude to recheck its own output
+8. **Self-verification** — ask Claude to recheck its own result
