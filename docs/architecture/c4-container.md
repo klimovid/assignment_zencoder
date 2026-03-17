@@ -3,106 +3,14 @@
 Cloud Agent Execution Platform — a managed SaaS for autonomous execution of software engineering tasks by AI agents in isolated cloud environments.
 
 > **Level**: C4 Container (Level 2) — zoom into [System Context](c4-system-context.md)
+> **Diagram**: [c4-container.drawio.svg](c4-container.drawio.svg) *(source: [c4-container.drawio](c4-container.drawio))*
 > **Sources**: [claude_architecture_summary_research.md](../researches/cloud_agent_architecture/claude_architecture_summary_research.md), [dashboard_research_summary.md](../researches/analytics_dashboard/dashboard_research_summary.md), [gemini_architecture_research.md](../researches/cloud_agent_architecture/gemini_architecture_research.md)
 
 ---
 
 ## Container Diagram
 
-```mermaid
-C4Container
-    title Container Diagram — Cloud Agent Execution Platform
-
-    Person(developer, "Software Engineer", "Creates tasks, reviews results, merges PRs")
-    Person(teamlead, "Team Lead / Reviewer", "Reviews PRs, provides mid-flight feedback")
-    Person(admin, "Org Admin", "SSO, roles, policies, billing")
-
-    Container_Boundary(control_plane, "Control Plane (Pooled)") {
-        Container(webapp, "Web App UI", "React / Next.js", "Task creation, session monitoring, diff/PR review, settings")
-        Container(apigw, "API Gateway", "Envoy / Kong", "Routing, rate limiting, JWT validation, WebSocket proxy")
-        Container(identity, "Identity & Access Service", "WorkOS/Auth0 + OPA/Cedar", "SSO (SAML/OIDC), SCIM provisioning, RBAC/ABAC")
-        Container(tenant, "Tenant & Org Management", "Go + PostgreSQL", "Org/team/project hierarchy, policies, budget limits, feature flags")
-        Container(orchestrator, "Task Orchestrator", "Temporal", "Durable workflow lifecycle: plan → execute → review cycle, checkpointing")
-        Container(eventbus, "Event Bus", "Kafka + NATS", "Durable event sourcing (Kafka) + real-time agent comms (NATS)")
-        Container(llmgw, "LLM Gateway", "LiteLLM-based + Redis", "Multi-provider routing, tenant-aware rate limiting, circuit breakers, cost tracking")
-        Container(integrations, "Integrations Hub", "Go + adapter pattern", "VCS (GitHub App), trackers (Jira/Linear), messaging (Slack/Teams), MCP, notifications")
-    }
-
-    Container_Boundary(data_plane, "Data Plane (Siloed per Session/Tenant)") {
-        Container(sandbox, "Sandbox Provisioner & Runtime Fleet", "Firecracker + warm pools + Nydus", "MicroVM lifecycle, repo clone, isolation, resource limits, egress proxy")
-        Container(artifacts, "Artifact & Session Store", "S3 + Redis + PostgreSQL", "Diffs, logs, test results, sandbox snapshots, session history")
-    }
-
-    Container_Boundary(analytics_plane, "Analytics Plane (Pooled, Tenant-Isolated at Data)") {
-        Container(stream, "Stream Processor", "Flink / Benthos", "Event enrichment, sessionization, pre-aggregation into rollups")
-        Container(olap, "OLAP Store", "ClickHouse", "Materialized views, Row-Level Security per tenant, 12-24 month retention")
-        Container(analyticsapi, "Analytics API", "Go, REST", "Dashboard queries, cohort threshold ≥5, CSV/NDJSON/OTEL export")
-        Container(dashboard, "Dashboard UI", "React / Next.js", "6 views + Session Deep-Dive (drill-down): Executive, Adoption, Delivery, Cost, Quality, Ops")
-        Container(export, "Customer Data Export", "Go worker", "Scheduled/on-demand export to customer S3/GCS, OTEL push (enterprise)")
-    }
-
-    Container_Boundary(crosscutting, "Cross-Cutting") {
-        Container(observability, "Observability & Audit Pipeline", "OTel Collector + Prometheus + Tempo + Loki", "Telemetry (traces, metrics, logs), append-only audit, SIEM streaming")
-    }
-
-    System_Ext(vcs, "VCS Providers", "GitHub, GitLab")
-    System_Ext(llm, "LLM Providers", "Anthropic, OpenAI, Google")
-    System_Ext(idp, "Identity Providers", "Okta, Azure AD")
-    System_Ext(trackers, "Task Trackers", "Jira, Linear")
-    System_Ext(messaging, "Messaging", "Slack, Teams")
-    System_Ext(cloud, "Cloud Infrastructure", "AWS, GCP, Azure")
-    System_Ext(mcp, "MCP Tool Servers", "Custom tool servers")
-    System_Ext(siem, "SIEM / Observability", "Splunk, Datadog")
-
-    Rel(developer, webapp, "Creates tasks, reviews diffs", "HTTPS")
-    Rel(developer, dashboard, "Views personal metrics", "HTTPS")
-    Rel(teamlead, webapp, "Reviews PRs, feedback", "HTTPS")
-    Rel(teamlead, dashboard, "Views team metrics", "HTTPS")
-    Rel(admin, webapp, "Manages settings", "HTTPS")
-    Rel(admin, dashboard, "Views cost, security", "HTTPS")
-
-    Rel(webapp, apigw, "All requests", "HTTPS / WebSocket")
-    Rel(dashboard, analyticsapi, "Dashboard queries", "HTTPS")
-    Rel(dashboard, apigw, "User profile, settings", "HTTPS")
-    Rel(apigw, identity, "Authentication", "gRPC")
-    Rel(apigw, tenant, "Tenant context", "gRPC")
-    Rel(apigw, orchestrator, "Task CRUD, feedback", "gRPC")
-    Rel(apigw, artifacts, "Artifact download", "HTTPS (presigned URLs)")
-    Rel(orchestrator, eventbus, "Task lifecycle events", "Kafka")
-    Rel(orchestrator, sandbox, "Provision/manage VM", "gRPC")
-    Rel(orchestrator, llmgw, "LLM inference (Think)", "gRPC / HTTPS")
-    Rel(orchestrator, integrations, "PR, notifications, MCP", "gRPC")
-    Rel(orchestrator, artifacts, "Diffs, logs, snapshots", "S3 + gRPC")
-    Rel(sandbox, eventbus, "Real-time agent events", "NATS")
-    Rel(sandbox, artifacts, "Filesystem snapshots", "S3")
-    Rel(llmgw, eventbus, "Token usage, cost events", "Kafka")
-    Rel(integrations, eventbus, "Webhook, integration events", "Kafka")
-    Rel(identity, eventbus, "Auth, role change events", "Kafka")
-    Rel(tenant, eventbus, "Policy, budget events", "Kafka")
-    Rel(eventbus, stream, "Canonical analytics events", "Kafka consumer")
-    Rel(eventbus, observability, "Audit events", "Kafka consumer")
-    Rel(stream, olap, "Pre-aggregated rollups", "ClickHouse native TCP")
-    Rel(analyticsapi, olap, "Tenant-scoped queries", "ClickHouse HTTP")
-    Rel(analyticsapi, export, "Trigger export jobs", "gRPC / queue")
-    Rel(export, olap, "Batch read for export", "ClickHouse native")
-
-    Rel(identity, idp, "SSO / SCIM", "SAML 2.0, OIDC, SCIM 2.0")
-    Rel(llmgw, llm, "Inference requests", "HTTPS / SSE streaming")
-    Rel(integrations, vcs, "Clone, branches, PR, webhooks", "HTTPS (REST)")
-    Rel(integrations, trackers, "Issue triggers, status sync", "HTTPS (REST)")
-    Rel(integrations, messaging, "ChatOps, notifications", "HTTPS / WebSocket")
-    Rel(integrations, mcp, "Tool invocations", "JSON-RPC 2.0 (Streamable HTTP)")
-    Rel(sandbox, cloud, "Compute provisioning", "Cloud SDK")
-    Rel(observability, siem, "Audit logs, metrics, traces", "OTLP (gRPC/HTTP)")
-    Rel(export, cloud, "Export to customer storage", "S3/GCS API")
-
-    UpdateRelStyle(developer, webapp, $offsetY="-40", $offsetX="-140")
-    UpdateRelStyle(developer, dashboard, $offsetY="-40", $offsetX="60")
-    UpdateRelStyle(teamlead, webapp, $offsetY="-40", $offsetX="-60")
-    UpdateRelStyle(teamlead, dashboard, $offsetY="-40", $offsetX="60")
-    UpdateRelStyle(admin, webapp, $offsetY="-40", $offsetX="-60")
-    UpdateRelStyle(admin, dashboard, $offsetY="-40", $offsetX="60")
-```
+![Container Diagram](c4-container.drawio.svg)
 
 ---
 

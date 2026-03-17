@@ -1,0 +1,319 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="c4-container" name="Container Diagram">
+    <mxGraphModel dx="1422" dy="1900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1800" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ==================== PERSONS (top) ==================== -->
+
+        <mxCell id="developer" value="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;Software Engineer&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[Person]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;Creates tasks, reviews results, merges PRs&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#08427B;strokeColor=#073B6F;fontColor=#ffffff;shape=mxgraph.c4.person2;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="150" y="30" width="200" height="180" as="geometry" />
+        </mxCell>
+
+        <mxCell id="teamlead" value="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;Team Lead / Reviewer&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[Person]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;Reviews PRs, provides mid-flight feedback&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#08427B;strokeColor=#073B6F;fontColor=#ffffff;shape=mxgraph.c4.person2;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="550" y="30" width="200" height="180" as="geometry" />
+        </mxCell>
+
+        <mxCell id="admin" value="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;Org Admin&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[Person]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;SSO, roles, policies, billing&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#08427B;strokeColor=#073B6F;fontColor=#ffffff;shape=mxgraph.c4.person2;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="950" y="30" width="200" height="180" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== CONTROL PLANE BOUNDARY ==================== -->
+
+        <mxCell id="control_plane" value="Control Plane (Pooled)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;dashed=1;dashPattern=8 4;strokeColor=#444444;fontColor=#444444;fillColor=none;verticalAlign=top;align=left;spacingLeft=10;spacingTop=5;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="270" width="1320" height="360" as="geometry" />
+        </mxCell>
+
+        <!-- Control Plane Row 1 -->
+
+        <mxCell id="webapp" value="&lt;font style=&quot;font-size: 14px&quot;&gt;&lt;b&gt;Web App UI&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[Container: React / Next.js]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;Task creation, session monitoring, diff/PR review&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#438DD5;strokeColor=#3C7FC0;fontColor=#ffffff;shape=mxgraph.c4.container2;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="70" y="310" width="280" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="apigw" value="&lt;font style=&quot;font-size: 14px&quot;&gt;&lt;b&gt;API Gateway&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[Container: Envoy / Kong]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;Routing, rate limiting, JWT validation, WS proxy&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#438DD5;strokeColor=#3C7FC0;fontColor=#ffffff;shape=mxgraph.c4.container2;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="390" y="310" width="280" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="identity" value="&lt;font style=&quot;font-size: 14px&quot;&gt;&lt;b&gt;Identity &amp;amp; Access&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[Container: WorkOS/Auth0 + OPA]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;SSO, SCIM, RBAC/ABAC&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#438DD5;strokeColor=#3C7FC0;fontColor=#ffffff;shape=mxgraph.c4.container2;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="710" y="310" width="280" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="tenant" value="&lt;font style=&quot;font-size: 14px&quot;&gt;&lt;b&gt;Tenant &amp;amp; Org Mgmt&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[Container: Go + PostgreSQL]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;Org hierarchy, policies, budgets&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#438DD5;strokeColor=#3C7FC0;fontColor=#ffffff;shape=mxgraph.c4.container2;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="310" width="280" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Control Plane Row 2 -->
+
+        <mxCell id="orchestrator" value="&lt;font style=&quot;font-size: 14px&quot;&gt;&lt;b&gt;Task Orchestrator&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[Container: Temporal]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;Workflow lifecycle, checkpointing&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#438DD5;strokeColor=#3C7FC0;fontColor=#ffffff;shape=mxgraph.c4.container2;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="70" y="440" width="280" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="eventbus" value="&lt;font style=&quot;font-size: 14px&quot;&gt;&lt;b&gt;Event Bus&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[Container: Kafka + NATS]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;Event sourcing + real-time comms&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#438DD5;strokeColor=#3C7FC0;fontColor=#ffffff;shape=mxgraph.c4.container2;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="390" y="440" width="280" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="llmgw" value="&lt;font style=&quot;font-size: 14px&quot;&gt;&lt;b&gt;LLM Gateway&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[Container: LiteLLM + Redis]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;Multi-provider routing, cost tracking&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#438DD5;strokeColor=#3C7FC0;fontColor=#ffffff;shape=mxgraph.c4.container2;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="710" y="440" width="280" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="integrations" value="&lt;font style=&quot;font-size: 14px&quot;&gt;&lt;b&gt;Integrations Hub&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[Container: Go + adapters]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;VCS, trackers, messaging, MCP&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#438DD5;strokeColor=#3C7FC0;fontColor=#ffffff;shape=mxgraph.c4.container2;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="440" width="280" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== DATA PLANE BOUNDARY ==================== -->
+
+        <mxCell id="data_plane" value="Data Plane (Siloed per Session/Tenant)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;dashed=1;dashPattern=8 4;strokeColor=#444444;fontColor=#444444;fillColor=none;verticalAlign=top;align=left;spacingLeft=10;spacingTop=5;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="680" width="1320" height="170" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sandbox" value="&lt;font style=&quot;font-size: 14px&quot;&gt;&lt;b&gt;Sandbox Provisioner &amp;amp; Runtime&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[Container: Firecracker + warm pools]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;MicroVM lifecycle, isolation, resource limits&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#438DD5;strokeColor=#3C7FC0;fontColor=#ffffff;shape=mxgraph.c4.container2;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="70" y="720" width="590" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="artifacts" value="&lt;font style=&quot;font-size: 14px&quot;&gt;&lt;b&gt;Artifact &amp;amp; Session Store&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[Container: S3 + Redis + PostgreSQL]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;Diffs, logs, snapshots, session history&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#438DD5;strokeColor=#3C7FC0;fontColor=#ffffff;shape=mxgraph.c4.container2;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="700" y="720" width="590" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== ANALYTICS PLANE BOUNDARY ==================== -->
+
+        <mxCell id="analytics_plane" value="Analytics Plane (Pooled, Tenant-Isolated at Data)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;dashed=1;dashPattern=8 4;strokeColor=#444444;fontColor=#444444;fillColor=none;verticalAlign=top;align=left;spacingLeft=10;spacingTop=5;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="900" width="1320" height="290" as="geometry" />
+        </mxCell>
+
+        <!-- Analytics Row 1 -->
+
+        <mxCell id="stream" value="&lt;font style=&quot;font-size: 14px&quot;&gt;&lt;b&gt;Stream Processor&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[Container: Flink / Benthos]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;Enrichment, sessionization, pre-aggregation&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#438DD5;strokeColor=#3C7FC0;fontColor=#ffffff;shape=mxgraph.c4.container2;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="70" y="940" width="380" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="olap" value="&lt;font style=&quot;font-size: 14px&quot;&gt;&lt;b&gt;OLAP Store&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[Container: ClickHouse]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;Materialized views, RLS, 12-24mo retention&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#438DD5;strokeColor=#3C7FC0;fontColor=#ffffff;shape=mxgraph.c4.container2;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="490" y="940" width="380" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="analyticsapi" value="&lt;font style=&quot;font-size: 14px&quot;&gt;&lt;b&gt;Analytics API&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[Container: Go, REST]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;Dashboard queries, privacy, export&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#438DD5;strokeColor=#3C7FC0;fontColor=#ffffff;shape=mxgraph.c4.container2;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="910" y="940" width="380" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Analytics Row 2 -->
+
+        <mxCell id="dashboard" value="&lt;font style=&quot;font-size: 14px&quot;&gt;&lt;b&gt;Dashboard UI&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[Container: React / Next.js]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;6 views + Session Deep-Dive&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#438DD5;strokeColor=#3C7FC0;fontColor=#ffffff;shape=mxgraph.c4.container2;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="70" y="1070" width="420" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="export" value="&lt;font style=&quot;font-size: 14px&quot;&gt;&lt;b&gt;Customer Data Export&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[Container: Go worker]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;Scheduled/on-demand export&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#438DD5;strokeColor=#3C7FC0;fontColor=#ffffff;shape=mxgraph.c4.container2;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="530" y="1070" width="420" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== CROSS-CUTTING BOUNDARY ==================== -->
+
+        <mxCell id="crosscutting" value="Cross-Cutting" style="rounded=1;whiteSpace=wrap;html=1;fontSize=13;dashed=1;dashPattern=8 4;strokeColor=#444444;fontColor=#444444;fillColor=none;verticalAlign=top;align=left;spacingLeft=10;spacingTop=5;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1240" width="1320" height="150" as="geometry" />
+        </mxCell>
+
+        <mxCell id="observability" value="&lt;font style=&quot;font-size: 14px&quot;&gt;&lt;b&gt;Observability &amp;amp; Audit Pipeline&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[Container: OTel + Prometheus + Tempo + Loki]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;Telemetry, audit, SIEM streaming&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#438DD5;strokeColor=#3C7FC0;fontColor=#ffffff;shape=mxgraph.c4.container2;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="70" y="1280" width="600" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== EXTERNAL SYSTEMS (bottom) — ROW 1 ==================== -->
+
+        <mxCell id="vcs" value="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;VCS Providers&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[External System]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;GitHub, GitLab&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#999999;strokeColor=#6D6D6D;fontColor=#ffffff;shape=mxgraph.c4.system;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="30" y="1460" width="280" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="llm" value="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;LLM Providers&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[External System]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;Anthropic, OpenAI, Google&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#999999;strokeColor=#6D6D6D;fontColor=#ffffff;shape=mxgraph.c4.system;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="350" y="1460" width="280" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="idp" value="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;Identity Providers&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[External System]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;Okta, Azure AD&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#999999;strokeColor=#6D6D6D;fontColor=#ffffff;shape=mxgraph.c4.system;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="670" y="1460" width="280" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="trackers" value="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;Task Trackers&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[External System]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;Jira, Linear&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#999999;strokeColor=#6D6D6D;fontColor=#ffffff;shape=mxgraph.c4.system;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="990" y="1460" width="280" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== EXTERNAL SYSTEMS — ROW 2 ==================== -->
+
+        <mxCell id="messaging" value="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;Messaging&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[External System]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;Slack, Teams&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#999999;strokeColor=#6D6D6D;fontColor=#ffffff;shape=mxgraph.c4.system;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="30" y="1590" width="280" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cloud" value="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;Cloud Infrastructure&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[External System]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;AWS, GCP, Azure&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#999999;strokeColor=#6D6D6D;fontColor=#ffffff;shape=mxgraph.c4.system;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="350" y="1590" width="280" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="mcp" value="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;MCP Tool Servers&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[External System]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;Custom tool servers&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#999999;strokeColor=#6D6D6D;fontColor=#ffffff;shape=mxgraph.c4.system;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="670" y="1590" width="280" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="siem" value="&lt;font style=&quot;font-size: 16px&quot;&gt;&lt;b&gt;SIEM / Observability&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[External System]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;Splunk, Datadog&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#999999;strokeColor=#6D6D6D;fontColor=#ffffff;shape=mxgraph.c4.system;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="990" y="1590" width="280" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== EDGES: Person → Container ==================== -->
+
+        <mxCell id="e1" value="Creates tasks, reviews diffs" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="developer" target="webapp" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e2" value="Views personal metrics" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="developer" target="dashboard" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e3" value="Reviews PRs, feedback" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="teamlead" target="webapp" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e4" value="Views team metrics" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="teamlead" target="dashboard" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e5" value="Manages settings" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="admin" target="webapp" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e6" value="Views cost, security" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="admin" target="dashboard" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== EDGES: Container → Container ==================== -->
+
+        <mxCell id="e7" value="All requests [HTTPS/WS]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="webapp" target="apigw" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e8" value="Dashboard queries [HTTPS]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="dashboard" target="analyticsapi" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e9" value="User profile [HTTPS]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="dashboard" target="apigw" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e10" value="Auth [gRPC]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="apigw" target="identity" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e11" value="Tenant context [gRPC]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="apigw" target="tenant" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e12" value="Task CRUD [gRPC]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="apigw" target="orchestrator" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e13" value="Artifact download [presigned URL]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="apigw" target="artifacts" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e14" value="Task events [Kafka]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="orchestrator" target="eventbus" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e15" value="Provision VM [gRPC]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="orchestrator" target="sandbox" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e16" value="LLM inference [gRPC]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="orchestrator" target="llmgw" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e17" value="PR, notifications [gRPC]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="orchestrator" target="integrations" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e18" value="Diffs, logs [S3+gRPC]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="orchestrator" target="artifacts" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e19" value="Agent events [NATS]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="sandbox" target="eventbus" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e20" value="Snapshots [S3]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="sandbox" target="artifacts" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e21" value="Token usage [Kafka]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="llmgw" target="eventbus" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e22" value="Webhook events [Kafka]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="integrations" target="eventbus" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e23" value="Auth events [Kafka]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="identity" target="eventbus" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e24" value="Policy events [Kafka]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="tenant" target="eventbus" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e25" value="Analytics events [Kafka]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="eventbus" target="stream" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e26" value="Audit events [Kafka]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="eventbus" target="observability" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e27" value="Rollups [CH native]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="stream" target="olap" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e28" value="Queries [CH HTTP]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="analyticsapi" target="olap" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e29" value="Export jobs [gRPC]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="analyticsapi" target="export" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e30" value="Batch read [CH native]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="export" target="olap" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== EDGES: Container → External ==================== -->
+
+        <mxCell id="e31" value="SSO/SCIM [SAML/OIDC]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="identity" target="idp" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e32" value="Inference [HTTPS/SSE]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="llmgw" target="llm" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e33" value="Repos, PRs [HTTPS]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="integrations" target="vcs" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e34" value="Issues, status [HTTPS]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="integrations" target="trackers" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e35" value="ChatOps [HTTPS/WS]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="integrations" target="messaging" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e36" value="Tool calls [JSON-RPC]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="integrations" target="mcp" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e37" value="Compute [Cloud SDK]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="sandbox" target="cloud" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e38" value="Audit, metrics [OTLP]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="observability" target="siem" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e39" value="Export data [S3/GCS]" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;metaEdit=1;endSize=14;startSize=14;rounded=0;" edge="1" source="export" target="cloud" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

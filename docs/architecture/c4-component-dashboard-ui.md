@@ -3,6 +3,7 @@
 Decomposition of the **Dashboard UI** container from the [Container Diagram](c4-container.md) (container 14) into internal components, organized by **Feature-Sliced Design (FSD)** methodology.
 
 > **Level**: C4 Component (Level 3) — zoom into Dashboard UI
+> **Diagram**: [c4-component-dashboard-ui.drawio.svg](c4-component-dashboard-ui.drawio.svg) *(source: [c4-component-dashboard-ui.drawio](c4-component-dashboard-ui.drawio))*
 > **Parent**: [C4 Container Diagram](c4-container.md)
 > **PRD**: [dashboard-prd.md](../prd/dashboard-prd.md)
 > **Architecture methodology**: [Feature-Sliced Design](https://feature-sliced.design/)
@@ -124,113 +125,7 @@ project-root/
 
 ## Component Diagram
 
-```mermaid
-C4Component
-    title Component Diagram — Dashboard UI (Feature-Sliced Design)
-
-    Container_Ext(analyticsApi, "Analytics API", "Go, REST", "Dashboard queries, privacy enforcement, export")
-    Container_Ext(apiGateway, "API Gateway", "Envoy / Kong", "Routing, rate limiting, JWT validation")
-    Container_Ext(identityService, "Identity & Access Service", "WorkOS/Auth0 + OPA/Cedar", "SSO, RBAC/ABAC, JWT, user profile storage")
-
-    Container_Boundary(dashboardUI, "Dashboard UI (React / Next.js App Router + FSD)") {
-
-        Boundary(sharedLayer, "shared/ — Shared Infrastructure") {
-            Component(designSystem, "Design System", "Shadcn UI (Radix UI + Tailwind CSS)", "Button, Card, Table, Skeleton, Input, Select, DatePicker, Badge, Tooltip, Modal, Dialog, Icon")
-            Component(apiClient, "API Client", "openapi-typescript + Zod", "Auto-generated types, fetch wrapper, JWT injection, runtime response validation")
-            Component(queryKeyFactory, "Query Key Factory", "TypeScript", "Centralized key generation: queryKeys.{view}(filters)")
-            Component(uiStore, "UIStore", "MobX", "Sidebar collapsed, mobile breakpoint (localStorage)")
-            Component(mswHandlers, "MSW Handlers", "MSW", "Mock API for testing, generated from OpenAPI + JSON fixtures")
-            Component(sharedConfig, "Config", "TypeScript", "Route constants, RBAC permission map, environment config")
-            Component(sharedLib, "Lib", "TypeScript", "PostHog helpers, Sentry helpers, i18n (next-intl), date/number formatters")
-        }
-
-        Boundary(entitiesLayer, "entities/ — Business Entities") {
-            Component(sessionEntity, "session", "Entity", "model/ types, api/ useSession hook")
-            Component(metricEntity, "metric", "Entity", "ui/ KPICard, DeltaIndicator, ChartContainer; model/ metric types")
-            Component(notificationEntity, "notification", "Entity", "ui/ NotificationItem; model/ NotificationStore; api/ useNotifications (60s poll)")
-            Component(teamEntity, "team", "Entity", "model/ team types")
-            Component(userEntity, "user", "Entity", "model/ UserSettingsStore; api/ useProfile, useSettings, useUpdateProfile, useUpdateSettings")
-        }
-
-        Boundary(featuresLayer, "features/ — User-Facing Capabilities") {
-            Component(filterMgmt, "filter-management", "Feature", "ui/ FilterBar, DateRangePicker, PeriodComparisonToggle; model/ FilterStore; lib/ URLSyncProvider")
-            Component(exportData, "export-data", "Feature", "ui/ ExportButton — CSV/NDJSON export with current filters")
-            Component(themeSwitching, "theme-switching", "Feature", "ui/ ThemeToggle — light/dark theme switch")
-            Component(authFeature, "auth", "Feature", "ui/ AuthGuard (client-side RBAC); model/ AuthStore (user, role, org_id, permissions)")
-        }
-
-        Boundary(widgetsLayer, "widgets/ — Composite UI Blocks") {
-            Component(appShell, "app-shell", "Widget", "Root layout: sidebar + header + content area")
-            Component(sidebarNav, "sidebar-nav", "Widget", "6 views + Settings; active route; collapsible on mobile")
-            Component(breadcrumbs, "breadcrumbs", "Widget", "Auto from route: Dashboard > View > Team > Session")
-            Component(notifCenter, "notification-center", "Widget", "Bell icon + unread badge + dropdown; mark read / dismiss")
-            Component(userMenu, "user-menu", "Widget", "Avatar dropdown: profile, settings link, IdP link, logout")
-            Component(emptyState, "empty-state", "Widget", "Onboarding guide or no-data-for-filters")
-            Component(dataTable, "data-table", "Widget", "Cursor pagination, sortable, row click drill-down")
-            Component(sessionTimeline, "session-timeline", "Widget", "SessionTimeline, StepDetailPanel, DiffViewer")
-            Component(costBreakdown, "cost-breakdown", "Widget", "Per-step cost bar chart + total session KPI")
-        }
-
-        Boundary(pagesLayer, "pages/ — Page Compositions") {
-            Component(execPage, "executive-overview", "Page", "api/ useOverview; KPIs, trends, risk posture")
-            Component(adoptPage, "adoption", "Page", "api/ useAdoption; DAU/WAU/MAU, funnel, team drill-down")
-            Component(delivPage, "delivery", "Page", "api/ useDelivery; PRs, TTM, agent vs non-agent, team drill-down")
-            Component(costPage, "cost", "Page", "api/ useCost; spend, forecast, budget, team drill-down")
-            Component(qualPage, "quality", "Page", "api/ useQuality; CI, reviews, violations")
-            Component(opsPage, "operations", "Page", "api/ useOperations (60s poll); queue, failures, SLA")
-            Component(sessionPage, "session-deep-dive", "Page", "Uses entities/session; sub-page via drill-down only")
-            Component(settingsPage, "settings", "Page", "Uses entities/user; theme, timezone, digests")
-        }
-
-        Boundary(appLayer, "app/ — Application Layer") {
-            Component(providers, "Providers", "React Context", "PostHog > Sentry > I18n > Theme > QueryClient > MobX stores > URLSync > AuthGuard")
-            Component(middleware, "Auth Middleware", "Next.js Middleware", "Edge: JWT validation, role-based route protection, IdP redirect")
-            Component(authRoutes, "Auth Route Handlers", "Next.js Route Handlers", "/api/auth/callback, /logout, /refresh, /me")
-        }
-    }
-
-    %% External relationships
-    Rel(middleware, identityService, "Validates JWT, extracts role", "HTTPS")
-    Rel(authRoutes, identityService, "Auth code exchange, token refresh", "HTTPS")
-    Rel(apiClient, analyticsApi, "Dashboard queries + notifications", "HTTPS / REST")
-    Rel(apiClient, apiGateway, "User profile + settings", "HTTPS / REST")
-
-    %% FSD layer relationships (top-down only)
-    %% app → pages
-    Rel(providers, appShell, "Wraps app shell")
-
-    %% pages → widgets + features + entities
-    Rel(execPage, metricEntity, "Uses KPICard, ChartContainer")
-    Rel(execPage, filterMgmt, "Uses FilterBar, DateRangePicker")
-    Rel(sessionPage, sessionTimeline, "Composes SessionTimeline, StepDetailPanel, DiffViewer")
-    Rel(sessionPage, costBreakdown, "Composes CostBreakdown")
-    Rel(sessionPage, sessionEntity, "Uses useSession(sessionId)")
-    Rel(settingsPage, userEntity, "Uses useSettings, useUpdateSettings")
-    Rel(opsPage, metricEntity, "Uses KPICard, ChartContainer")
-
-    %% widgets → features + entities + shared
-    Rel(appShell, sidebarNav, "Contains sidebar")
-    Rel(appShell, notifCenter, "Contains in header")
-    Rel(appShell, userMenu, "Contains in header")
-    Rel(appShell, breadcrumbs, "Contains in content area")
-    Rel(appShell, themeSwitching, "Contains ThemeToggle in header")
-    Rel(notifCenter, notificationEntity, "Reads NotificationStore, dispatches actions")
-    Rel(userMenu, authFeature, "Reads AuthStore (user, role)")
-    Rel(dataTable, designSystem, "Extends shared/ui/Table")
-
-    %% features → entities + shared
-    Rel(filterMgmt, apiClient, "FilterStore included in query keys")
-    Rel(authFeature, sharedConfig, "Reads RBAC permission map")
-
-    %% entities → shared
-    Rel(notificationEntity, apiClient, "useNotifications (60s polling)")
-    Rel(userEntity, apiClient, "useProfile, useSettings via API Gateway")
-    Rel(metricEntity, designSystem, "KPICard extends Card, ChartContainer uses Skeleton")
-    Rel(sessionEntity, apiClient, "useSession(sessionId)")
-
-    %% shared internal
-    Rel(apiClient, queryKeyFactory, "Generates cache keys from filters")
-```
+![Component Diagram — Dashboard UI](c4-component-dashboard-ui.drawio.svg)
 
 ---
 

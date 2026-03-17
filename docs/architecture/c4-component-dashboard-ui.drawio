@@ -1,0 +1,333 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="c4-component-dashboard-ui" name="Component Diagram — Dashboard UI">
+    <mxGraphModel dx="1422" dy="1500" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1550" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ==================== EXTERNAL CONTAINERS (top) ==================== -->
+
+        <mxCell id="analyticsApi" value="&lt;font style=&quot;font-size: 14px&quot;&gt;&lt;b&gt;Analytics API&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[Container: Go, REST]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;Dashboard queries, privacy, export&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#438DD5;strokeColor=#3C7FC0;fontColor=#ffffff;shape=mxgraph.c4.container2;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="80" y="30" width="380" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="apiGateway" value="&lt;font style=&quot;font-size: 14px&quot;&gt;&lt;b&gt;API Gateway&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[Container: Envoy / Kong]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;Routing, rate limiting, JWT validation&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#438DD5;strokeColor=#3C7FC0;fontColor=#ffffff;shape=mxgraph.c4.container2;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="510" y="30" width="380" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="identityService" value="&lt;font style=&quot;font-size: 14px&quot;&gt;&lt;b&gt;Identity &amp;amp; Access Service&lt;/b&gt;&lt;/font&gt;&lt;div&gt;[Container: WorkOS/Auth0 + OPA]&lt;/div&gt;&lt;br&gt;&lt;div&gt;&lt;font style=&quot;font-size: 11px; color: #cccccc;&quot;&gt;SSO, RBAC/ABAC, JWT&lt;/font&gt;&lt;/div&gt;" style="html=1;fontSize=11;dashed=0;whiteSpace=wrap;fillColor=#438DD5;strokeColor=#3C7FC0;fontColor=#ffffff;shape=mxgraph.c4.container2;align=center;metaEdit=1;points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];resizable=0;" vertex="1" parent="1">
+          <mxGeometry x="940" y="30" width="380" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== DASHBOARD UI BOUNDARY ==================== -->
+
+        <mxCell id="dashboardUI" value="Dashboard UI (React / Next.js App Router + FSD)" style="rounded=1;whiteSpace=wrap;html=1;fontSize=14;dashed=1;dashPattern=8 4;strokeColor=#3C7FC0;fontColor=#3C7FC0;fillColor=none;verticalAlign=top;align=left;spacingLeft=10;spacingTop=5;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="150" width="1440" height="1340" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== app/ LAYER ==================== -->
+
+        <mxCell id="appLayer" value="app/ — Application Layer" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;dashed=1;dashPattern=5 3;strokeColor=#888888;fontColor=#555555;fillColor=#F8F8F8;verticalAlign=top;align=left;spacingLeft=10;spacingTop=5;fontStyle=3;" vertex="1" parent="1">
+          <mxGeometry x="55" y="180" width="1390" height="110" as="geometry" />
+        </mxCell>
+
+        <mxCell id="providers" value="&lt;b&gt;Providers&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;PostHog &amp;gt; Sentry &amp;gt; Theme &amp;gt; Query &amp;gt; MobX&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="80" y="210" width="400" height="65" as="geometry" />
+        </mxCell>
+
+        <mxCell id="middleware" value="&lt;b&gt;Auth Middleware&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;JWT validation, route protection (Edge)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="510" y="210" width="400" height="65" as="geometry" />
+        </mxCell>
+
+        <mxCell id="authRoutes" value="&lt;b&gt;Auth Route Handlers&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;/callback, /logout, /refresh, /me&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="940" y="210" width="400" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== pages/ LAYER ==================== -->
+
+        <mxCell id="pagesLayer" value="pages/ — Page Compositions" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;dashed=1;dashPattern=5 3;strokeColor=#888888;fontColor=#555555;fillColor=#F8F8F8;verticalAlign=top;align=left;spacingLeft=10;spacingTop=5;fontStyle=3;" vertex="1" parent="1">
+          <mxGeometry x="55" y="320" width="1390" height="185" as="geometry" />
+        </mxCell>
+
+        <mxCell id="execPage" value="&lt;b&gt;executive-overview&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;KPIs, trends, risk posture&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="80" y="350" width="310" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="adoptPage" value="&lt;b&gt;adoption&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;DAU/WAU/MAU, funnel, team drill-down&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="410" y="350" width="310" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="delivPage" value="&lt;b&gt;delivery&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;PRs, TTM, completion rates&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="740" y="350" width="310" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="costPage" value="&lt;b&gt;cost&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;Spend, forecast, budget alerts&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1070" y="350" width="310" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="qualPage" value="&lt;b&gt;quality&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;CI, reviews, violations&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="80" y="430" width="310" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="opsPage" value="&lt;b&gt;operations&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;Queue, failures, SLA (60s poll)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="410" y="430" width="310" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sessionPage" value="&lt;b&gt;session-deep-dive&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;Reasoning timeline, diffs, steps&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="740" y="430" width="310" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="settingsPage" value="&lt;b&gt;settings&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;Theme, timezone, digests&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1070" y="430" width="310" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== widgets/ LAYER ==================== -->
+
+        <mxCell id="widgetsLayer" value="widgets/ — Composite UI Blocks" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;dashed=1;dashPattern=5 3;strokeColor=#888888;fontColor=#555555;fillColor=#F8F8F8;verticalAlign=top;align=left;spacingLeft=10;spacingTop=5;fontStyle=3;" vertex="1" parent="1">
+          <mxGeometry x="55" y="535" width="1390" height="280" as="geometry" />
+        </mxCell>
+
+        <mxCell id="appShell" value="&lt;b&gt;app-shell&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;Sidebar + header + content area&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="80" y="565" width="420" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sidebarNav" value="&lt;b&gt;sidebar-nav&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;6 views + Settings, collapsible&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="520" y="565" width="420" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="breadcrumbs" value="&lt;b&gt;breadcrumbs&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;Auto from route path&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="960" y="565" width="420" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="notifCenter" value="&lt;b&gt;notification-center&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;Bell icon + unread badge + dropdown&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="80" y="645" width="420" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="userMenu" value="&lt;b&gt;user-menu&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;Avatar dropdown: profile, logout&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="520" y="645" width="420" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="emptyState" value="&lt;b&gt;empty-state&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;Onboarding guide / no-data&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="960" y="645" width="420" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="dataTable" value="&lt;b&gt;data-table&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;Pagination, sort, row drill-down&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="80" y="725" width="420" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sessionTimeline" value="&lt;b&gt;session-timeline&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;Timeline, StepDetail, DiffViewer&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="520" y="725" width="420" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="costBreakdown" value="&lt;b&gt;cost-breakdown&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;Per-step cost chart + total KPI&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="960" y="725" width="420" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== features/ LAYER ==================== -->
+
+        <mxCell id="featuresLayer" value="features/ — User-Facing Capabilities" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;dashed=1;dashPattern=5 3;strokeColor=#888888;fontColor=#555555;fillColor=#F8F8F8;verticalAlign=top;align=left;spacingLeft=10;spacingTop=5;fontStyle=3;" vertex="1" parent="1">
+          <mxGeometry x="55" y="845" width="1390" height="110" as="geometry" />
+        </mxCell>
+
+        <mxCell id="filterMgmt" value="&lt;b&gt;filter-management&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;FilterBar, FilterStore, URLSync&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="80" y="878" width="310" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="exportData" value="&lt;b&gt;export-data&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;ExportButton CSV/NDJSON&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="410" y="878" width="310" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="themeSwitching" value="&lt;b&gt;theme-switching&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;ThemeToggle, ThemeProvider&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="740" y="878" width="310" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="authFeature" value="&lt;b&gt;auth&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;AuthGuard, AuthStore (RBAC)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1070" y="878" width="310" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== entities/ LAYER ==================== -->
+
+        <mxCell id="entitiesLayer" value="entities/ — Business Entities" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;dashed=1;dashPattern=5 3;strokeColor=#888888;fontColor=#555555;fillColor=#F8F8F8;verticalAlign=top;align=left;spacingLeft=10;spacingTop=5;fontStyle=3;" vertex="1" parent="1">
+          <mxGeometry x="55" y="985" width="1390" height="110" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sessionEntity" value="&lt;b&gt;session&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;types, useSession hook&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="80" y="1018" width="250" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="metricEntity" value="&lt;b&gt;metric&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;KPICard, DeltaIndicator, ChartContainer&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="345" y="1018" width="250" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="notificationEntity" value="&lt;b&gt;notification&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;NotificationItem, Store (60s poll)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="610" y="1018" width="250" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="teamEntity" value="&lt;b&gt;team&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;Team, TeamMember types&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="875" y="1018" width="250" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="userEntity" value="&lt;b&gt;user&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;UserSettingsStore, useProfile&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="1018" width="250" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== shared/ LAYER ==================== -->
+
+        <mxCell id="sharedLayer" value="shared/ — Shared Infrastructure" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;dashed=1;dashPattern=5 3;strokeColor=#888888;fontColor=#555555;fillColor=#F8F8F8;verticalAlign=top;align=left;spacingLeft=10;spacingTop=5;fontStyle=3;" vertex="1" parent="1">
+          <mxGeometry x="55" y="1125" width="1390" height="190" as="geometry" />
+        </mxCell>
+
+        <mxCell id="designSystem" value="&lt;b&gt;Design System&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;Shadcn UI (Radix + Tailwind)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="80" y="1158" width="310" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="apiClient" value="&lt;b&gt;API Client&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;openapi-typescript + Zod validation&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="410" y="1158" width="310" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="queryKeyFactory" value="&lt;b&gt;Query Key Factory&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;queryKeys.{view}(filters)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="740" y="1158" width="310" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="uiStore" value="&lt;b&gt;UIStore&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;MobX: sidebar, mobile breakpoint&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="1070" y="1158" width="310" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="mswHandlers" value="&lt;b&gt;MSW Handlers&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;Mock API for testing&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="80" y="1238" width="400" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sharedConfig" value="&lt;b&gt;Config&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;Routes, RBAC map, environment&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="510" y="1238" width="400" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sharedLib" value="&lt;b&gt;Lib&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;PostHog, Sentry, i18n, formatters&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#85BBF0;strokeColor=#78A8D8;fontColor=#000000;fontSize=12;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="940" y="1238" width="400" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== EDGES: External ==================== -->
+
+        <mxCell id="r1" value="Validates JWT" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="middleware" target="identityService" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r2" value="Auth code exchange, token refresh" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="authRoutes" target="identityService" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r3" value="Dashboard queries + notifications" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="apiClient" target="analyticsApi" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r4" value="User profile + settings" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="apiClient" target="apiGateway" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== EDGES: app → widgets ==================== -->
+
+        <mxCell id="r5" value="Wraps" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="providers" target="appShell" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== EDGES: pages → lower layers ==================== -->
+
+        <mxCell id="r6" value="KPICard, ChartContainer" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="execPage" target="metricEntity" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r7" value="FilterBar, DateRangePicker" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="execPage" target="filterMgmt" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r8" value="SessionTimeline, DiffViewer" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="sessionPage" target="sessionTimeline" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r9" value="CostBreakdown" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="sessionPage" target="costBreakdown" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r10" value="useSession(id)" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="sessionPage" target="sessionEntity" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r11" value="useSettings" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="settingsPage" target="userEntity" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r12" value="KPICard, ChartContainer" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="opsPage" target="metricEntity" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== EDGES: widgets internal + down ==================== -->
+
+        <mxCell id="r13" value="Contains sidebar" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="appShell" target="sidebarNav" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r14" value="Header" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="appShell" target="notifCenter" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r15" value="Header" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="appShell" target="userMenu" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r16" value="Content area" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="appShell" target="breadcrumbs" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r17" value="ThemeToggle" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="appShell" target="themeSwitching" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r18" value="NotificationStore" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="notifCenter" target="notificationEntity" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r19" value="AuthStore" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="userMenu" target="authFeature" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r20" value="Extends Table" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="dataTable" target="designSystem" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== EDGES: features → shared ==================== -->
+
+        <mxCell id="r21" value="FilterStore in query keys" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="filterMgmt" target="apiClient" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r22" value="RBAC permission map" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="authFeature" target="sharedConfig" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== EDGES: entities → shared ==================== -->
+
+        <mxCell id="r23" value="useNotifications (60s poll)" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="notificationEntity" target="apiClient" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r24" value="useProfile, useSettings" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="userEntity" target="apiClient" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r25" value="Extends Card, Skeleton" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="metricEntity" target="designSystem" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r26" value="useSession" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="sessionEntity" target="apiClient" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ==================== EDGES: shared internal ==================== -->
+
+        <mxCell id="r27" value="Generates cache keys" style="endArrow=blockThin;html=1;fontSize=9;fontColor=#404040;strokeWidth=1;endFill=1;strokeColor=#828282;rounded=0;" edge="1" source="apiClient" target="queryKeyFactory" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -9,49 +9,57 @@ async function loginAs(page: import("@playwright/test").Page, role: string) {
   await page.waitForURL(/\/dashboard/);
 }
 
+function sidebar(page: import("@playwright/test").Page) {
+  return page.getByRole("navigation", { name: "Main navigation" });
+}
+
 test.describe("RBAC — sidebar filtering", () => {
   test("finops sees only Dashboard, Cost, Settings", async ({ page }) => {
     await loginAs(page, "finops");
-    await expect(page.getByText("Executive Overview")).toBeVisible();
-    await expect(page.getByText("Cost & Budgets")).toBeVisible();
-    await expect(page.getByText("Settings")).toBeVisible();
-    await expect(page.getByText("Adoption & Usage")).not.toBeVisible();
-    await expect(page.getByText("Delivery Impact")).not.toBeVisible();
-    await expect(page.getByText("Quality & Security")).not.toBeVisible();
-    await expect(page.getByText("Operations")).not.toBeVisible();
+    const nav = sidebar(page);
+    await expect(nav.getByText("Executive Overview")).toBeVisible();
+    await expect(nav.getByText("Cost & Budgets")).toBeVisible();
+    await expect(nav.getByText("Settings")).toBeVisible();
+    await expect(nav.getByText("Adoption & Usage")).not.toBeVisible();
+    await expect(nav.getByText("Delivery Impact")).not.toBeVisible();
+    await expect(nav.getByText("Quality & Security")).not.toBeVisible();
+    await expect(nav.getByText("Operations")).not.toBeVisible();
   });
 
   test("security sees only Quality, Settings", async ({ page }) => {
     await loginAs(page, "security");
-    await expect(page.getByText("Quality & Security")).toBeVisible();
-    await expect(page.getByText("Settings")).toBeVisible();
-    await expect(page.getByText("Executive Overview")).not.toBeVisible();
-    await expect(page.getByText("Adoption & Usage")).not.toBeVisible();
-    await expect(page.getByText("Delivery Impact")).not.toBeVisible();
-    await expect(page.getByText("Cost & Budgets")).not.toBeVisible();
-    await expect(page.getByText("Operations")).not.toBeVisible();
+    const nav = sidebar(page);
+    await expect(nav.getByText("Quality & Security")).toBeVisible();
+    await expect(nav.getByText("Settings")).toBeVisible();
+    await expect(nav.getByText("Executive Overview")).not.toBeVisible();
+    await expect(nav.getByText("Adoption & Usage")).not.toBeVisible();
+    await expect(nav.getByText("Delivery Impact")).not.toBeVisible();
+    await expect(nav.getByText("Cost & Budgets")).not.toBeVisible();
+    await expect(nav.getByText("Operations")).not.toBeVisible();
   });
 
   test("platform_eng sees Adoption, Delivery, Operations, Settings", async ({ page }) => {
     await loginAs(page, "platform_eng");
-    await expect(page.getByText("Adoption & Usage")).toBeVisible();
-    await expect(page.getByText("Delivery Impact")).toBeVisible();
-    await expect(page.getByText("Operations")).toBeVisible();
-    await expect(page.getByText("Settings")).toBeVisible();
-    await expect(page.getByText("Executive Overview")).not.toBeVisible();
-    await expect(page.getByText("Cost & Budgets")).not.toBeVisible();
-    await expect(page.getByText("Quality & Security")).not.toBeVisible();
+    const nav = sidebar(page);
+    await expect(nav.getByText("Adoption & Usage")).toBeVisible();
+    await expect(nav.getByText("Delivery Impact")).toBeVisible();
+    await expect(nav.getByText("Operations")).toBeVisible();
+    await expect(nav.getByText("Settings")).toBeVisible();
+    await expect(nav.getByText("Executive Overview")).not.toBeVisible();
+    await expect(nav.getByText("Cost & Budgets")).not.toBeVisible();
+    await expect(nav.getByText("Quality & Security")).not.toBeVisible();
   });
 
   test("ic_dev sees Adoption, Delivery, Settings", async ({ page }) => {
     await loginAs(page, "ic_dev");
-    await expect(page.getByText("Adoption & Usage")).toBeVisible();
-    await expect(page.getByText("Delivery Impact")).toBeVisible();
-    await expect(page.getByText("Settings")).toBeVisible();
-    await expect(page.getByText("Executive Overview")).not.toBeVisible();
-    await expect(page.getByText("Cost & Budgets")).not.toBeVisible();
-    await expect(page.getByText("Quality & Security")).not.toBeVisible();
-    await expect(page.getByText("Operations")).not.toBeVisible();
+    const nav = sidebar(page);
+    await expect(nav.getByText("Adoption & Usage")).toBeVisible();
+    await expect(nav.getByText("Delivery Impact")).toBeVisible();
+    await expect(nav.getByText("Settings")).toBeVisible();
+    await expect(nav.getByText("Executive Overview")).not.toBeVisible();
+    await expect(nav.getByText("Cost & Budgets")).not.toBeVisible();
+    await expect(nav.getByText("Quality & Security")).not.toBeVisible();
+    await expect(nav.getByText("Operations")).not.toBeVisible();
   });
 });
 
