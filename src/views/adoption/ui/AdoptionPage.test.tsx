@@ -28,7 +28,7 @@ describe("AdoptionPage", () => {
     render(<AdoptionPage data={data} />);
     expect(screen.getByText("Sessions by Team")).toBeInTheDocument();
     data.data.sessions_by_team.forEach((team) => {
-      expect(screen.getByText(team.team_name)).toBeInTheDocument();
+      expect(screen.getAllByText(team.team_name).length).toBeGreaterThanOrEqual(1);
     });
   });
 

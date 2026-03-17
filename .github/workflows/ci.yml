@@ -1,0 +1,120 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+  NEXT_PUBLIC_ANALYTICS_API_URL: /api/mock
+  NEXT_PUBLIC_API_GATEWAY_URL: /api/mock
+  NEXT_PUBLIC_APP_URL: http://localhost:3000
+  JWT_SECRET: ci-secret-minimum-32-characters-long!!
+  IDP_CLIENT_ID: ci-client-id
+  IDP_CLIENT_SECRET: ci-client-secret
+  IDP_ISSUER_URL: http://localhost:3000/api/auth
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+      - run: yarn install --immutable
+      - run: yarn lint
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+      - run: yarn install --immutable
+      - run: npx tsc --noEmit
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+      - run: yarn install --immutable
+      - run: yarn test:coverage
+      - name: Check coverage gates
+        run: |
+          node -e "
+            const report = require('./coverage/coverage-summary.json');
+            const total = report.total;
+            const stmts = total.statements.pct;
+            const branches = total.branches.pct;
+            console.log('Statements:', stmts + '%');
+            console.log('Branches:', branches + '%');
+            if (stmts < 60) {
+              console.error('Statement coverage below 60% gate');
+              process.exit(1);
+            }
+          "
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck, test]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+      - run: yarn install --immutable
+      - run: yarn build
+      - name: Bundle size check
+        run: |
+          BUNDLE_SIZE=$(du -sk .next/static | cut -f1)
+          echo "Bundle size: ${BUNDLE_SIZE}KB"
+          if [ "$BUNDLE_SIZE" -gt 512 ]; then
+            echo "::warning::Bundle size (${BUNDLE_SIZE}KB) exceeds 250KB gzip target (approx 512KB uncompressed)"
+          fi
+
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: yarn
+      - run: yarn install --immutable
+      - run: npx playwright install --with-deps chromium
+      - run: yarn build
+      - name: Run E2E tests
+        run: yarn test:e2e --project=chromium
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
